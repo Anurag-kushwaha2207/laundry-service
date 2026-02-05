@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laundry Services</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<nav class="navbar">
+  <div class="nav-left">
+    <div class="logo">
+      <img src="https://th.bing.com/th?q=Laundry+Logo+Icon+PNG" alt="Laundry Logo">
+    </div>
+  </div>
+
+  <ul class="nav-links">
+    <li><a href="#home" class="active">Home</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+
+  <div class="nav-right">
+    <div class="username">Username</div>
+  </div>
+</nav>
+
+
+<!-- ================= HERO ================= -->
+<section class="hero" id="home">
+  <div class="hero-text">
+    <h1>
+      Revitalize Your Clothes with Expert
+      <span>Laundry Services</span>
+    </h1>
+
+    <p>
+      Fast wash, premium care and reliable delivery —
+      trusted by hundreds of happy customers.
+    </p>
+
+    <div class="hero-buttons">
+      <button class="primary-btn" onclick="document.getElementById('services').scrollIntoView()">
+        Book a Service
+      </button>
+
+      <button class="secondary-btn" onclick="document.getElementById('contact').scrollIntoView()">
+        Contact Us
+      </button>
+    </div>
+  </div>
+
+  <div class="hero-img">
+    <img src="https://i.pinimg.com/originals/11/62/9a/11629a566e8b8c01884fa7dcba0cb17f.png" alt="Laundry Service">
+  </div>
+</section>
+
+
+<!-- ================= SERVICES ================= -->
+<section class="section" id="services">
+  <div class="services-container">
+
+    <!-- LEFT -->
+    <div class="services">
+  <h3>Our Services</h3>
+
+  <div class="service-item">
+    <span>🧺 Dry Cleaning – ₹200</span>
+    <button class="add-btn" onclick="addToCart('Dry Cleaning',200)">Add Item</button>
+  </div>
+
+  <div class="service-item">
+    <span>🧺 Wash & Fold – ₹100</span>
+    <button class="add-btn" onclick="addToCart('Wash & Fold',100)">Add Item</button>
+  </div>
+
+  <div class="service-item">
+    <span>🧺 Ironing – ₹30</span>
+    <button class="add-btn" onclick="addToCart('Ironing',30)">Add Item</button>
+  </div>
+
+  <div class="service-item">
+    <span>🧺 Stain Removal – ₹500</span>
+    <button class="add-btn" onclick="addToCart('Stain Removal',500)">Add Item</button>
+  </div>
+
+  <div class="service-item">
+    <span>🧺 Steam Press – ₹80</span>
+    <button class="add-btn" onclick="addToCart('Steam Press',80)">Add Item</button>
+  </div>
+
+  <div class="service-item">
+    <span>🧺 Curtain Cleaning – ₹350</span>
+    <button class="add-btn" onclick="addToCart('Curtain Cleaning',350)">Add Item</button>
+  </div>
+
+  <div class="service-item">
+    <span>🧺 Blanket Cleaning – ₹600</span>
+    <button class="add-btn" onclick="addToCart('Blanket Cleaning',600)">Add Item</button>
+  </div>
+
+  <div class="service-item">
+    <span>🧺 Shoe Cleaning – ₹250</span>
+    <button class="add-btn" onclick="addToCart('Shoe Cleaning',250)">Add Item</button>
+  </div>
+
+  <p class="info">Add items to cart and book now</p>
+</div>
+
+
+    <!-- RIGHT -->
+    <div class="cart">
+  <h3>Added Items</h3>
+
+  <ul id="cartList" class="cart-list">
+    <li>No Items Added</li>
+  </ul>
+
+  <h4 class="total-text">
+    Total Amount: ₹<span id="total">0</span>
+  </h4>
+
+  <h3 class="book-title">Book Now</h3>
+
+  <div class="cart-form">
+    <input type="text" placeholder="Full Name">
+    <input type="email" placeholder="Email ID">
+    <input type="text" placeholder="Phone Number">
+    <button class="book-btn">Book Now</button>
+  </div>
+</div>
+
+</section>
+
+<section class="section quality" id="about">
+
+  <!-- 💧 LEFT + RIGHT WATER EFFECT -->
+  <div class="water-fountain">
+    <span class="water-drop left"></span>
+    <span class="water-drop left"></span>
+    <span class="water-drop left"></span>
+
+    <span class="water-drop right"></span>
+    <span class="water-drop right"></span>
+    <span class="water-drop right"></span>
+  </div>
+
+  <!-- 🔵 BLUE WHY BOX -->
+  <div class="why-box">
+    <h2 class="why-title">Why Choose Us?</h2>
+    <p class="why-sub">
+      Premium quality • Quick support • Affordable prices
+    </p>
+
+    <div class="why-points">
+      <div class="why-item">🧺 Premium Fabric Care</div>
+      <div class="why-item">⚡ Fast Pickup & Delivery</div>
+      <div class="why-item">💬 24/7 Customer Support</div>
+      <div class="why-item">💰 Transparent & Affordable Pricing</div>
+      <div class="why-item">🛡️ Safe & Hygienic Process</div>
+      <div class="why-item">⏱️ On-Time Delivery Guarantee</div>
+    </div>
+  </div>
+
+</section>
+
+
+
+
+<!-- ================= CONTACT ================= -->
+<section class="section contact" id="contact">
+  <div class="contact-box">
+
+    <div class="contact-left">
+  <h2 class="contact-title">We’d Love to Hear From You</h2>
+
+  <p class="contact-desc">
+    Feel free to contact us anytime. We are always ready to help you with
+    quick and reliable laundry services.
+  </p>
+
+  <div class="contact-info">
+    <p>
+      <ion-icon name="mail-unread-outline"></ion-icon>
+      <a href="mailto:anuragkushwaha2207@outlook.com">
+        anuragkushwaha2207@outlook.com
+      </a>
+    </p>
+
+    <p>
+      <ion-icon name="phone-portrait-outline"></ion-icon>
+      <a href="tel:9837101838">+91 98371 01838</a>
+    </p>
+
+    <p>
+      <ion-icon name="logo-whatsapp"></ion-icon>
+      <a href="https://wa.me/919837101838" target="_blank">
+        WhatsApp: 98371 01838
+      </a>
+    </p>
+  </div>
+
+  <!-- ⭐ CUSTOMER REVIEWS -->
+  <div class="review-box">
+    <h3>Customer Reviews</h3>
+
+    <div class="single-review">
+      <div class="stars">★ ★ ★ ★ ★</div>
+      <p class="review-text">
+        Excellent service, clean clothes & on-time delivery.
+      </p>
+      <p class="review-user">— Happy Customer</p>
+    </div>
+
+    <div class="single-review">
+      <div class="stars">★ ★ ★ ★ ☆</div>
+      <p class="review-text">
+        Very professional staff and affordable pricing.
+      </p>
+      <p class="review-user">— Satisfied Customer</p>
+    </div>
+  </div>
+</div>
+
+
+
+    <div class="contact-right">
+  <h2>Send Message</h2>
+
+  <form class="contact-form">
+    <input type="text" placeholder="Your Name">
+    <input type="email" placeholder="Your Email">
+    <textarea placeholder="Your Message"></textarea>
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+
+  <!-- ADDRESS + MAP -->
+  <div class="footer-box">
+    <h4>Our Address</h4>
+    <p>
+      Mugal Road, Etawah<br>
+      Sultanpur, Near Akhand Single Home
+    </p>
+
+    <iframe
+      src="https://www.google.com/maps?q=Etawah%20Uttar%20Pradesh&output=embed"
+      width="100%"
+      height="160"
+      style="border:0; border-radius:10px; margin-top:10px;"
+      loading="lazy">
+    </iframe>
+  </div>
+
+  <!-- PRIVACY POLICY -->
+  <div class="footer-box">
+    <h4>Privacy Policy</h4>
+    <p>
+      We respect your privacy. Any personal information such as name,
+      email address or phone number collected on this website is used
+      only for providing laundry services and customer support.
+    </p>
+    <p>
+      We do not share your personal data with third parties.
+    </p>
+  </div>
+
+  <!-- TERMS & CONDITIONS -->
+  <div class="footer-box">
+    <h4>Terms & Conditions</h4>
+    <p>
+      By using our services, you agree to our terms. Prices may vary
+      based on fabric type and service requirements.
+    </p>
+    <p>
+      Customers are responsible for providing correct order details.
+    </p>
+  </div>
+
+  <!-- SOCIAL LINKS -->
+  <div class="footer-box">
+    <h4>Follow Us</h4>
+    <div class="social-links">
+      <a class="yt" href="https://www.youtube.com/@AnuragTalkies" target="_blank">
+        <ion-icon name="logo-youtube"></ion-icon>
+      </a>
+      <a class="insta" href="https://www.instagram.com/anurag_talkies" target="_blank">
+        <ion-icon name="logo-instagram"></ion-icon>
+      </a>
+      <a class="fb" href="https://www.facebook.com/anurag.talkies" target="_blank">
+        <ion-icon name="logo-facebook"></ion-icon>
+      </a>
+      <a class="x" href="https://x.com/AnuragTalkies" target="_blank">
+        <ion-icon name="logo-twitter"></ion-icon>
+      </a>
+    </div>
+  </div>
+
+</footer>
+
+<!-- COPYRIGHT -->
+<div class="footer-bottom">
+  © 2026 Laundry Service. All Rights Reserved.
+</div>
+
+<!-- ICONS -->
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
+   
