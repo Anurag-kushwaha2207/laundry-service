@@ -88,4 +88,4 @@ npx firebase-tools deploy
 
 * **Anurag Kushwaha**
 * **GitHub**: [@Anurag-kushwaha2207](https://github.com/Anurag-kushwaha2207)
-* **YouTube**: [@AnuragTalkies](https://www.youtube.com/@AnuragTalkies)
+
