@@ -1,325 +1,463 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Laundry Services</title>
+
+  <!-- SEO Meta Tags -->
+  <title>Laundry Services - Professional Laundry & Dry Cleaning</title>
+  <meta name="description"
+    content="Professional Laundry and Dry Cleaning services. Fast wash, premium fabric care, and reliable home delivery. Book your laundry service online today!">
+  <meta name="keywords"
+    content="laundry service, dry cleaning, wash and fold, ironing, steam press, blanket cleaning, shoe cleaning, Etawah laundry">
+  <meta name="author" content="Anurag Kushwaha">
+
+  <!-- Open Graph / Facebook SEO -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Premium Laundry & Dry Cleaning Services">
+  <meta property="og:description"
+    content="Fast wash, premium care and reliable delivery - trusted by hundreds of happy customers.">
+  <meta property="og:url" content="https://github.com/Anurag-kushwaha2207/laundry-service">
+
+  <!-- Twitter SEO -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:title" content="Premium Laundry & Dry Cleaning Services">
+  <meta property="twitter:description"
+    content="Fast wash, premium care and reliable delivery - trusted by hundreds of happy customers.">
 
   <link rel="stylesheet" href="style.css">
 
   <!-- EmailJS -->
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+  <!-- Firebase App & Firestore (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 
 <body>
 
-<!-- ================= NAVBAR ================= -->
-<nav class="navbar">
-  <div class="nav-left">
-    <div class="logo">
-      <img src="https://th.bing.com/th?q=Laundry+Logo+Icon+PNG" alt="Laundry Logo">
+  <!-- ================= NAVBAR ================= -->
+  <nav class="navbar">
+    <div class="nav-left">
+      <div class="logo">
+        <img src="https://th.bing.com/th?q=Laundry+Logo+Icon+PNG" alt="Laundry Logo">
+      </div>
     </div>
-  </div>
 
-  <ul class="nav-links">
-    <li><a href="#home" class="active">Home</a></li>
-    <li><a href="#services">Services</a></li>
-    <li><a href="#about">About</a></li>
-    <li><a href="#contact">Contact</a></li>
-  </ul>
+    <ul class="nav-links">
+      <li><a href="#home" class="active">Home</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
 
-  <div class="nav-right">
-    <div class="username">Username</div>
-  </div>
-</nav>
-
-
-<!-- ================= HERO ================= -->
-<section class="hero" id="home">
-  <div class="hero-text">
-    <h1>
-      Revitalize Your Clothes with Expert
-      <span>Laundry Services</span>
-    </h1>
-
-    <p>
-      Fast wash, premium care and reliable delivery —
-      trusted by hundreds of happy customers.
-    </p>
-
-    <div class="hero-buttons">
-      <button class="primary-btn" onclick="document.getElementById('services').scrollIntoView()">
-        Book a Service
-      </button>
-
-      <button class="secondary-btn" onclick="document.getElementById('contact').scrollIntoView()">
-        Contact Us
-      </button>
+    <div class="nav-right">
+      <div class="username" id="navUsername" onclick="handleUsernameClick()" style="cursor: pointer;">Username</div>
     </div>
-  </div>
-
-  <div class="hero-img">
-    <img src="https://i.pinimg.com/originals/11/62/9a/11629a566e8b8c01884fa7dcba0cb17f.png" alt="Laundry Service">
-  </div>
-</section>
+  </nav>
 
 
-<!-- ================= SERVICES ================= -->
-<section class="section" id="services">
-  <div class="services-container">
+  <!-- ================= HERO ================= -->
+  <section class="hero" id="home">
+    <div class="hero-text">
+      <h1>
+        Revitalize Your Clothes with Expert
+        <span>Laundry Services</span>
+      </h1>
 
-    <!-- LEFT -->
-    <div class="services">
-  <h3>Our Services</h3>
-
-  <div class="service-item">
-    <span>🧺 Dry Cleaning – ₹200</span>
-    <button class="add-btn" onclick="addToCart('Dry Cleaning',200)">Add Item</button>
-  </div>
-
-  <div class="service-item">
-    <span>🧺 Wash & Fold – ₹100</span>
-    <button class="add-btn" onclick="addToCart('Wash & Fold',100)">Add Item</button>
-  </div>
-
-  <div class="service-item">
-    <span>🧺 Ironing – ₹30</span>
-    <button class="add-btn" onclick="addToCart('Ironing',30)">Add Item</button>
-  </div>
-
-  <div class="service-item">
-    <span>🧺 Stain Removal – ₹500</span>
-    <button class="add-btn" onclick="addToCart('Stain Removal',500)">Add Item</button>
-  </div>
-
-  <div class="service-item">
-    <span>🧺 Steam Press – ₹80</span>
-    <button class="add-btn" onclick="addToCart('Steam Press',80)">Add Item</button>
-  </div>
-
-  <div class="service-item">
-    <span>🧺 Curtain Cleaning – ₹350</span>
-    <button class="add-btn" onclick="addToCart('Curtain Cleaning',350)">Add Item</button>
-  </div>
-
-  <div class="service-item">
-    <span>🧺 Blanket Cleaning – ₹600</span>
-    <button class="add-btn" onclick="addToCart('Blanket Cleaning',600)">Add Item</button>
-  </div>
-
-  <div class="service-item">
-    <span>🧺 Shoe Cleaning – ₹250</span>
-    <button class="add-btn" onclick="addToCart('Shoe Cleaning',250)">Add Item</button>
-  </div>
-
-  <p class="info">Add items to cart and book now</p>
-</div>
-
-
-    <!-- RIGHT -->
-    <div class="cart">
-  <h3>Added Items</h3>
-
-  <ul id="cartList" class="cart-list">
-    <li>No Items Added</li>
-  </ul>
-
-  <h4 class="total-text">
-    Total Amount: ₹<span id="total">0</span>
-  </h4>
-
-  <h3 class="book-title">Book Now</h3>
-
-  <div class="cart-form">
-    <input type="text" placeholder="Full Name">
-    <input type="email" placeholder="Email ID">
-    <input type="text" placeholder="Phone Number">
-    <button class="book-btn">Book Now</button>
-  </div>
-</div>
-
-</section>
-
-<section class="section quality" id="about">
-
-  <!-- 💧 LEFT + RIGHT WATER EFFECT -->
-  <div class="water-fountain">
-    <span class="water-drop left"></span>
-    <span class="water-drop left"></span>
-    <span class="water-drop left"></span>
-
-    <span class="water-drop right"></span>
-    <span class="water-drop right"></span>
-    <span class="water-drop right"></span>
-  </div>
-
-  <!-- 🔵 BLUE WHY BOX -->
-  <div class="why-box">
-    <h2 class="why-title">Why Choose Us?</h2>
-    <p class="why-sub">
-      Premium quality • Quick support • Affordable prices
-    </p>
-
-    <div class="why-points">
-      <div class="why-item">🧺 Premium Fabric Care</div>
-      <div class="why-item">⚡ Fast Pickup & Delivery</div>
-      <div class="why-item">💬 24/7 Customer Support</div>
-      <div class="why-item">💰 Transparent & Affordable Pricing</div>
-      <div class="why-item">🛡️ Safe & Hygienic Process</div>
-      <div class="why-item">⏱️ On-Time Delivery Guarantee</div>
-    </div>
-  </div>
-
-</section>
-
-
-
-
-<!-- ================= CONTACT ================= -->
-<section class="section contact" id="contact">
-  <div class="contact-box">
-
-    <div class="contact-left">
-  <h2 class="contact-title">We’d Love to Hear From You</h2>
-
-  <p class="contact-desc">
-    Feel free to contact us anytime. We are always ready to help you with
-    quick and reliable laundry services.
-  </p>
-
-  <div class="contact-info">
-    <p>
-      <ion-icon name="mail-unread-outline"></ion-icon>
-      <a href="mailto:anuragkushwaha2207@outlook.com">
-        anuragkushwaha2207@outlook.com
-      </a>
-    </p>
-
-    <p>
-      <ion-icon name="phone-portrait-outline"></ion-icon>
-      <a href="tel:9837101838">+91 98371 01838</a>
-    </p>
-
-    <p>
-      <ion-icon name="logo-whatsapp"></ion-icon>
-      <a href="https://wa.me/919837101838" target="_blank">
-        WhatsApp: 98371 01838
-      </a>
-    </p>
-  </div>
-
-  <!-- ⭐ CUSTOMER REVIEWS -->
-  <div class="review-box">
-    <h3>Customer Reviews</h3>
-
-    <div class="single-review">
-      <div class="stars">★ ★ ★ ★ ★</div>
-      <p class="review-text">
-        Excellent service, clean clothes & on-time delivery.
+      <p>
+        Fast wash, premium care and reliable delivery —
+        trusted by hundreds of happy customers.
       </p>
-      <p class="review-user">— Happy Customer</p>
+
+      <div class="hero-buttons">
+        <button class="primary-btn" onclick="document.getElementById('services').scrollIntoView()">
+          Book a Service
+        </button>
+
+        <button class="secondary-btn" onclick="document.getElementById('contact').scrollIntoView()">
+          Contact Us
+        </button>
+      </div>
     </div>
 
-    <div class="single-review">
-      <div class="stars">★ ★ ★ ★ ☆</div>
-      <p class="review-text">
-        Very professional staff and affordable pricing.
+    <div class="hero-img">
+      <img src="https://i.pinimg.com/originals/11/62/9a/11629a566e8b8c01884fa7dcba0cb17f.png" alt="Laundry Service">
+    </div>
+  </section>
+
+
+  <!-- ================= SERVICES ================= -->
+  <section class="section" id="services">
+    <div class="services-container">
+
+      <!-- LEFT -->
+      <div class="services">
+        <h3>Our Services</h3>
+
+        <div class="service-item">
+          <span>🧺 Dry Cleaning – ₹200</span>
+          <button class="add-btn" onclick="addToCart('Dry Cleaning',200)">Add Item</button>
+        </div>
+
+        <div class="service-item">
+          <span>🧺 Wash & Fold – ₹100</span>
+          <button class="add-btn" onclick="addToCart('Wash & Fold',100)">Add Item</button>
+        </div>
+
+        <div class="service-item">
+          <span>🧺 Ironing – ₹30</span>
+          <button class="add-btn" onclick="addToCart('Ironing',30)">Add Item</button>
+        </div>
+
+        <div class="service-item">
+          <span>🧺 Stain Removal – ₹500</span>
+          <button class="add-btn" onclick="addToCart('Stain Removal',500)">Add Item</button>
+        </div>
+
+        <div class="service-item">
+          <span>🧺 Steam Press – ₹80</span>
+          <button class="add-btn" onclick="addToCart('Steam Press',80)">Add Item</button>
+        </div>
+
+        <div class="service-item">
+          <span>🧺 Curtain Cleaning – ₹350</span>
+          <button class="add-btn" onclick="addToCart('Curtain Cleaning',350)">Add Item</button>
+        </div>
+
+        <div class="service-item">
+          <span>🧺 Blanket Cleaning – ₹600</span>
+          <button class="add-btn" onclick="addToCart('Blanket Cleaning',600)">Add Item</button>
+        </div>
+
+        <div class="service-item">
+          <span>🧺 Shoe Cleaning – ₹250</span>
+          <button class="add-btn" onclick="addToCart('Shoe Cleaning',250)">Add Item</button>
+        </div>
+
+        <p class="info">Add items to cart and book now</p>
+      </div>
+
+
+      <!-- RIGHT -->
+      <div class="cart">
+        <h3>Added Items</h3>
+
+        <ul id="cartList" class="cart-list">
+          <li>No Items Added</li>
+        </ul>
+
+        <h4 class="total-text">
+          Total Amount: ₹<span id="total">0</span>
+        </h4>
+
+        <h3 class="book-title">Book Now</h3>
+
+        <div class="cart-form">
+          <input type="text" id="cartName" placeholder="Full Name" required>
+          <input type="email" id="cartEmail" placeholder="Email ID" required>
+          <input type="text" id="cartPhone" placeholder="Phone Number" required>
+          <button class="book-btn" onclick="submitBooking()">Book Now</button>
+        </div>
+      </div>
+
+  </section>
+
+  <section class="section quality" id="about">
+
+    <!-- 💧 LEFT + RIGHT WATER EFFECT -->
+    <div class="water-fountain">
+      <span class="water-drop left"></span>
+      <span class="water-drop left"></span>
+      <span class="water-drop left"></span>
+
+      <span class="water-drop right"></span>
+      <span class="water-drop right"></span>
+      <span class="water-drop right"></span>
+    </div>
+
+    <!-- 🔵 BLUE WHY BOX -->
+    <div class="why-box">
+      <h2 class="why-title">Why Choose Us?</h2>
+      <p class="why-sub">
+        Premium quality • Quick support • Affordable prices
       </p>
-      <p class="review-user">— Satisfied Customer</p>
+
+      <div class="why-points">
+        <div class="why-item">🧺 Premium Fabric Care</div>
+        <div class="why-item">⚡ Fast Pickup & Delivery</div>
+        <div class="why-item">💬 24/7 Customer Support</div>
+        <div class="why-item">💰 Transparent & Affordable Pricing</div>
+        <div class="why-item">🛡️ Safe & Hygienic Process</div>
+        <div class="why-item">⏱️ On-Time Delivery Guarantee</div>
+      </div>
+    </div>
+
+  </section>
+
+
+
+
+  <!-- ================= CONTACT ================= -->
+  <section class="section contact" id="contact">
+    <div class="contact-box">
+
+      <div class="contact-left">
+        <h2 class="contact-title">We’d Love to Hear From You</h2>
+
+        <p class="contact-desc">
+          Feel free to contact us anytime. We are always ready to help you with
+          quick and reliable laundry services.
+        </p>
+
+        <div class="contact-info">
+          <p>
+            <ion-icon name="mail-unread-outline"></ion-icon>
+            <a href="mailto:anuragkushwaha2207@outlook.com">
+              anuragkushwaha2207@outlook.com
+            </a>
+          </p>
+
+          <p>
+            <ion-icon name="phone-portrait-outline"></ion-icon>
+            <a href="tel:9837101838">+91 98371 01838</a>
+          </p>
+
+          <p>
+            <ion-icon name="logo-whatsapp"></ion-icon>
+            <a href="https://wa.me/919837101838" target="_blank">
+              WhatsApp: 98371 01838
+            </a>
+          </p>
+        </div>
+
+        <!-- ⭐ CUSTOMER REVIEWS -->
+        <div class="review-box">
+          <h3>Customer Reviews</h3>
+
+          <div class="single-review">
+            <div class="stars">★ ★ ★ ★ ★</div>
+            <p class="review-text">
+              Excellent service, clean clothes & on-time delivery.
+            </p>
+            <p class="review-user">— Happy Customer</p>
+          </div>
+
+          <div class="single-review">
+            <div class="stars">★ ★ ★ ★ ☆</div>
+            <p class="review-text">
+              Very professional staff and affordable pricing.
+            </p>
+            <p class="review-user">— Satisfied Customer</p>
+          </div>
+        </div>
+      </div>
+
+
+
+      <div class="contact-right">
+        <h2>Send Message</h2>
+
+        <form class="contact-form">
+          <input type="text" placeholder="Your Name">
+          <input type="email" placeholder="Your Email">
+          <textarea placeholder="Your Message"></textarea>
+          <button type="submit">Send</button>
+        </form>
+      </div>
+
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+
+    <!-- ADDRESS + MAP -->
+    <div class="footer-box">
+      <h4>Our Address</h4>
+      <p>
+        Lakhna City, Etawah<br>
+        Shiv Colony Berikheda Road
+      </p>
+
+      <iframe src="https://www.google.com/maps?q=Etawah%20Uttar%20Pradesh&output=embed" width="100%" height="160"
+        style="border:0; border-radius:10px; margin-top:10px;" loading="lazy">
+      </iframe>
+    </div>
+
+    <!-- PRIVACY POLICY -->
+    <div class="footer-box">
+      <h4>Privacy Policy</h4>
+      <p>
+        We respect your privacy. Any personal information such as name,
+        email address or phone number collected on this website is used
+        only for providing laundry services and customer support.
+      </p>
+      <p>
+        We do not share your personal data with third parties.
+      </p>
+    </div>
+
+    <!-- TERMS & CONDITIONS -->
+    <div class="footer-box">
+      <h4>Terms & Conditions</h4>
+      <p>
+        By using our services, you agree to our terms. Prices may vary
+        based on fabric type and service requirements.
+      </p>
+      <p>
+        Customers are responsible for providing correct order details.
+      </p>
+    </div>
+
+    <!-- SOCIAL LINKS -->
+    <div class="footer-box">
+      <h4>Follow Us</h4>
+      <div class="social-links">
+        <a class="yt" href="https://www.youtube.com/@AnuragTalkies" target="_blank">
+          <ion-icon name="logo-youtube"></ion-icon>
+        </a>
+        <a class="insta" href="https://www.instagram.com/anuragkushwaha2207" target="_blank">
+          <ion-icon name="logo-instagram"></ion-icon>
+        </a>
+        <a class="fb" href="https://www.facebook.com/Anuragkushwaha2207/" target="_blank">
+          <ion-icon name="logo-facebook"></ion-icon>
+        </a>
+        <a class="x" href="https://x.com/anuragkush2207" target="_blank">
+          <ion-icon name="logo-twitter"></ion-icon>
+        </a>
+      </div>
+    </div>
+
+  </footer>
+
+  <!-- COPYRIGHT -->
+  <div class="footer-bottom">
+    © 2026 PI_Service. All Rights Reserved.
+  </div>
+
+  <!-- ================= MODALS ================= -->
+  <!-- Auth Modal -->
+  <div id="authModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal('authModal')">&times;</span>
+
+      <!-- Login View -->
+      <div id="loginView">
+        <h2 class="modal-title">Welcome Back</h2>
+        <p class="modal-subtitle">Log in to view your details & laundry history</p>
+        <div class="modal-form">
+          <input type="email" id="loginEmail" placeholder="Enter your Email ID" required>
+          <button class="modal-btn" onclick="sendLoginOTP()">Send Login OTP</button>
+          <p class="modal-switch">New User? <a href="#" onclick="switchAuthView('register')">Register / Create
+              Account</a></p>
+        </div>
+      </div>
+
+      <!-- Register View -->
+      <div id="registerView" style="display: none;">
+        <h2 class="modal-title">Create Account</h2>
+        <p class="modal-subtitle">Register to store your bookings in the cloud</p>
+        <div class="modal-form">
+          <input type="text" id="regName" placeholder="Full Name" required>
+          <input type="email" id="regEmail" placeholder="Email ID" required>
+          <input type="text" id="regPhone" placeholder="Phone Number" required>
+          <button class="modal-btn" onclick="sendRegisterOTP()">Send Registration OTP</button>
+          <p class="modal-switch">Already registered? <a href="#" onclick="switchAuthView('login')">Log In Here</a></p>
+        </div>
+      </div>
+
+      <!-- OTP View -->
+      <div id="otpView" style="display: none;">
+        <h2 class="modal-title">Verify OTP</h2>
+        <p class="modal-subtitle" id="otpSubtitle">Please enter the 6-digit OTP code sent to your email.</p>
+        <div class="modal-form">
+          <input type="text" id="otpCode" placeholder="Enter 6-Digit OTP" maxlength="6" required>
+          <button class="modal-btn" onclick="verifyOTPCode()">Verify & Log In</button>
+          <p class="modal-switch"><a href="#" onclick="cancelOTP()">Go Back</a></p>
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
+  <!-- Dashboard Modal -->
+  <div id="dashboardModal" class="modal">
+    <div class="modal-content dashboard-content">
+      <span class="close-modal" onclick="closeModal('dashboardModal')">&times;</span>
+      <h2 class="modal-title">My Dashboard</h2>
 
+      <div class="dashboard-grid">
+        <!-- User Info Panel -->
+        <div class="profile-panel">
+          <h3>Profile Details</h3>
 
-    <div class="contact-right">
-  <h2>Send Message</h2>
+          <!-- Static Display Mode -->
+          <div id="profileDisplay">
+            <p><strong>Name:</strong> <span id="profileName">-</span></p>
+            <p><strong>Email:</strong> <span id="profileEmail">-</span></p>
+            <p><strong>Phone:</strong> <span id="profilePhone">-</span></p>
+            <button class="modal-btn" onclick="enableProfileEdit()" style="margin-top: 15px; width: 100%;">Edit
+              Profile</button>
+          </div>
 
-  <form class="contact-form">
-    <input type="text" placeholder="Your Name">
-    <input type="email" placeholder="Your Email">
-    <textarea placeholder="Your Message"></textarea>
-    <button type="submit">Send</button>
-  </form>
-</div>
+          <!-- Edit Mode Form -->
+          <div id="profileEditForm" style="display: none;">
+            <div class="modal-form" style="gap: 12px; margin-top: 10px;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 12px; font-weight: 700; color: #555;">Name</label>
+                <input type="text" id="editName" required>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 12px; font-weight: 700; color: #555;">Email ID</label>
+                <input type="email" id="editEmail" required>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 12px; font-weight: 700; color: #555;">Phone Number</label>
+                <input type="text" id="editPhone" required>
+              </div>
+              <button class="modal-btn" onclick="saveProfileChanges()" style="margin-top: 5px;">Save Changes</button>
+              <button class="secondary-btn" onclick="cancelProfileEdit()"
+                style="border-radius: 8px; padding: 10px; width: 100%; font-size: 14px; cursor: pointer;">Cancel</button>
+            </div>
+          </div>
 
-</section>
+          <button class="logout-btn" onclick="logoutUser()">Log Out</button>
+        </div>
 
-<!-- ================= FOOTER ================= -->
-<footer class="footer">
-
-  <!-- ADDRESS + MAP -->
-  <div class="footer-box">
-    <h4>Our Address</h4>
-    <p>
-      Mugal Road, Etawah<br>
-      Sultanpur, Near Akhand Single Home
-    </p>
-
-    <iframe
-      src="https://www.google.com/maps?q=Etawah%20Uttar%20Pradesh&output=embed"
-      width="100%"
-      height="160"
-      style="border:0; border-radius:10px; margin-top:10px;"
-      loading="lazy">
-    </iframe>
-  </div>
-
-  <!-- PRIVACY POLICY -->
-  <div class="footer-box">
-    <h4>Privacy Policy</h4>
-    <p>
-      We respect your privacy. Any personal information such as name,
-      email address or phone number collected on this website is used
-      only for providing laundry services and customer support.
-    </p>
-    <p>
-      We do not share your personal data with third parties.
-    </p>
-  </div>
-
-  <!-- TERMS & CONDITIONS -->
-  <div class="footer-box">
-    <h4>Terms & Conditions</h4>
-    <p>
-      By using our services, you agree to our terms. Prices may vary
-      based on fabric type and service requirements.
-    </p>
-    <p>
-      Customers are responsible for providing correct order details.
-    </p>
-  </div>
-
-  <!-- SOCIAL LINKS -->
-  <div class="footer-box">
-    <h4>Follow Us</h4>
-    <div class="social-links">
-      <a class="yt" href="https://www.youtube.com/@AnuragTalkies" target="_blank">
-        <ion-icon name="logo-youtube"></ion-icon>
-      </a>
-      <a class="insta" href="https://www.instagram.com/anurag_talkies" target="_blank">
-        <ion-icon name="logo-instagram"></ion-icon>
-      </a>
-      <a class="fb" href="https://www.facebook.com/anurag.talkies" target="_blank">
-        <ion-icon name="logo-facebook"></ion-icon>
-      </a>
-      <a class="x" href="https://x.com/AnuragTalkies" target="_blank">
-        <ion-icon name="logo-twitter"></ion-icon>
-      </a>
+        <!-- Order History Panel -->
+        <div class="history-panel">
+          <h3>My Booking History</h3>
+          <div id="historyContainer" class="history-container">
+            <p class="no-history">No bookings found.</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-</footer>
+  <!-- Success Booking Modal -->
+  <div id="successModal" class="modal">
+    <div class="modal-content success-modal-content">
+      <span class="close-modal" onclick="closeModal('successModal')">&times;</span>
+      <div style="text-align: center; padding: 10px;">
+        <span style="font-size: 60px; color: #4caf50;">✔️</span>
+        <h2 class="modal-title" style="color: #4caf50; margin-top: 15px;">Booking Successful!</h2>
+        <p style="font-size: 15px; margin: 15px 0 20px 0; color: #333; line-height: 1.5;">
+          Congratulations! Your laundry booking has been registered successfully. A detailed receipt copy has been sent
+          to your email:<br>
+          <strong id="successEmail" style="color: #1976d2;">-</strong>
+        </p>
+        <button class="modal-btn" onclick="closeModal('successModal')"
+          style="background-color: #4caf50; width: 150px;">Close</button>
+      </div>
+    </div>
+  </div>
 
-<!-- COPYRIGHT -->
-<div class="footer-bottom">
-  © 2026 Laundry Service. All Rights Reserved.
-</div>
-
-<!-- ICONS -->
-<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-<script src="script.js"></script>
+  <!-- ICONS -->
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <script src="script.js"></script>
 </body>
+
 </html>
-   
