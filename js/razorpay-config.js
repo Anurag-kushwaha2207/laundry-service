@@ -1,5 +1,5 @@
 // Razorpay Configuration & Integration Helper
-// Obtain your Test Key ID from Razorpay Dashboard > Settings > API Keys
+// Obtain your actual Test Key ID from Razorpay Dashboard > Settings > API Keys
 // Standard test Key ID format: rzp_test_xxxxxxxxxxxxxx
 
 export const RAZORPAY_TEST_KEY = "rzp_test_laundry_demo_key"; 
@@ -10,10 +10,13 @@ export const RAZORPAY_TEST_KEY = "rzp_test_laundry_demo_key";
  */
 export function openRazorpayCheckout({ amount, bookingId, itemTitle, userEmail, userPhone, onSuccess, onFailure }) {
   if (typeof Razorpay === "undefined") {
-    alert("Razorpay SDK failed to load. Please check your internet connection.");
+    alert("Razorpay SDK failed to load. Please check internet connection.");
     if (onFailure) onFailure(new Error("SDK Not Loaded"));
     return;
   }
+
+  // Check if user is using default demo placeholder key
+  const isDemoKey = !RAZORPAY_TEST_KEY || RAZORPAY_TEST_KEY === "rzp_test_laundry_demo_key" || RAZORPAY_TEST_KEY.includes("demo");
 
   const options = {
     key: RAZORPAY_TEST_KEY,
@@ -54,10 +57,28 @@ export function openRazorpayCheckout({ amount, bookingId, itemTitle, userEmail, 
 
   const rzp = new Razorpay(options);
   
-  // Custom fallback handler for demo mode if test key is non-live
-  rzp.on('payment.failed', function (response){
-    console.error("Razorpay Payment Failed:", response.error);
-    if (onFailure) onFailure(response.error);
+  // Custom fallback handler for invalid demo key
+  rzp.on('payment.failed', function (response) {
+    console.warn("Razorpay API Key invalid/demo mode:", response.error);
+
+    if (isDemoKey) {
+      const simulateSuccess = confirm(
+        "💡 Razorpay Demo Mode Detected:\n\n" +
+        "You are using a demo key ('rzp_test_laundry_demo_key'). To test with live Razorpay cards/UPI, paste your actual Key ID from razorpay.com dashboard into js/razorpay-config.js.\n\n" +
+        "Would you like to SIMULATE a Successful Test Payment now?"
+      );
+
+      if (simulateSuccess && onSuccess) {
+        onSuccess({
+          razorpay_payment_id: `pay_simulated_${Date.now()}`,
+          razorpay_order_id: `order_simulated_${Date.now()}`,
+          razorpay_signature: "simulated_signature"
+        });
+        return;
+      }
+    }
+
+    if (onFailure) onFailure(response.error || new Error("Payment Failed"));
   });
 
   rzp.open();

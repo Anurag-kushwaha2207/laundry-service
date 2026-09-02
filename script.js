@@ -745,7 +745,27 @@ async function submitBooking() {
         }
       }
     };
+
     const rzp = new Razorpay(options);
+
+    rzp.on('payment.failed', function (response) {
+      console.warn("Razorpay API Key invalid/demo mode:", response.error);
+
+      const simulateSuccess = confirm(
+        "💡 Razorpay Demo Mode Detected:\n\n" +
+        "To test with live Razorpay UPI/Cards, paste your actual Key ID from razorpay.com into script.js.\n\n" +
+        "Would you like to SIMULATE a Successful Test Payment now?"
+      );
+
+      if (simulateSuccess) {
+        newBooking.status = "Paid";
+        newBooking.paymentId = `pay_simulated_${Date.now()}`;
+        finalizeLaundryBooking(name, targetEmail, phone, newBooking, totalBill, bookingId);
+      } else {
+        alert("Payment was not completed.");
+      }
+    });
+
     rzp.open();
   } else {
     // Fallback if Razorpay SDK isn't loaded
