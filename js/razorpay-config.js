@@ -2,7 +2,7 @@
 // Obtain your actual Test Key ID from Razorpay Dashboard > Settings > API Keys
 // Standard test Key ID format: rzp_test_xxxxxxxxxxxxxx
 
-export const RAZORPAY_TEST_KEY = "rzp_test_laundry_demo_key"; 
+export const RAZORPAY_TEST_KEY = "rzp_test_TX2iOYJFJu7CmK"; 
 
 /**
  * Open Razorpay Checkout Modal

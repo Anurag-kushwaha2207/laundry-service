@@ -207,8 +207,8 @@ async function sendOTPEmail(name, email, otp) {
   console.log(`[OTP Email Request] To: ${name} <${email}> | OTP: ${otp}`);
   if (useEmailJS && typeof emailjs !== "undefined") {
     try {
-      const templateId = (emailjsConfig.otpTemplateId && emailjsConfig.otpTemplateId !== "YOUR_OTP_TEMPLATE_ID") 
-        ? emailjsConfig.otpTemplateId 
+      const templateId = (emailjsConfig.otpTemplateId && emailjsConfig.otpTemplateId !== "YOUR_OTP_TEMPLATE_ID")
+        ? emailjsConfig.otpTemplateId
         : emailjsConfig.bookingTemplateId;
 
       let templateParams = {};
@@ -230,7 +230,7 @@ async function sendOTPEmail(name, email, otp) {
           otp_code: otp
         };
       }
-      
+
       await emailjs.send(emailjsConfig.serviceId, templateId, templateParams);
       console.log("EmailJS OTP sent successfully!");
       return true;
@@ -329,7 +329,7 @@ function closeModal(id) {
 
 async function sendLoginOTP() {
   const email = document.getElementById("loginEmail").value.trim();
-  
+
   if (!email || !validateEmail(email)) {
     alert("Please enter a valid Email ID.");
     return;
@@ -440,7 +440,7 @@ async function verifyOTPCode() {
     }
 
     currentUser = { name: tempAuthData.name, email: tempAuthData.email.toLowerCase().trim(), phone: tempAuthData.phone };
-    
+
     // Reset dashboard static fields just in case they open it again
     document.getElementById("profileName").innerText = currentUser.name;
     document.getElementById("profileEmail").innerText = currentUser.email;
@@ -463,7 +463,7 @@ async function verifyOTPCode() {
 
   // Persist session locally on this device
   localStorage.setItem("laundry_current_user", JSON.stringify(currentUser));
-  
+
   updateNavbarUser(currentUser.name);
   prefillCartForm();
   closeModal('authModal');
@@ -503,7 +503,7 @@ function logoutUser() {
 
   const adminNavLink = document.getElementById("adminNavLink");
   if (adminNavLink) adminNavLink.style.display = "none";
-  
+
   // Clear cart prefill inputs
   const cartName = document.getElementById("cartName");
   const cartEmail = document.getElementById("cartEmail");
@@ -526,7 +526,7 @@ async function openDashboard() {
 
   const historyContainer = document.getElementById("historyContainer");
   historyContainer.innerHTML = "<p class='no-history'>Loading history from cloud...</p>";
-  
+
   openModal('dashboardModal');
 
   const user = await getCloudUser(currentUser.email);
@@ -620,27 +620,27 @@ async function saveProfileChanges() {
   if (cleanEmail === oldEmail) {
     const user = await getCloudUser(oldEmail);
     const bookings = (user && user.bookings) ? user.bookings : [];
-    
+
     const updatedProfile = {
       name: name,
       email: cleanEmail,
       phone: phone,
       bookings: bookings
     };
-    
+
     await saveCloudUser(cleanEmail, updatedProfile);
-    
+
     currentUser = { name: name, email: cleanEmail, phone: phone };
     localStorage.setItem("laundry_current_user", JSON.stringify(currentUser));
-    
+
     updateNavbarUser(name);
     prefillCartForm();
     cancelProfileEdit();
-    
+
     document.getElementById("profileName").innerText = name;
     document.getElementById("profileEmail").innerText = cleanEmail;
     document.getElementById("profilePhone").innerText = phone;
-    
+
     alert("Profile details updated successfully!");
     return;
   }
@@ -720,7 +720,7 @@ async function submitBooking() {
   // Step 14: Trigger Razorpay Payment Modal for Laundry Checkout
   if (typeof Razorpay !== "undefined") {
     const options = {
-      key: "rzp_test_laundry_demo_key",
+      key: "rzp_test_TX2iOYJFJu7CmK",
       amount: totalBill * 100,
       currency: "INR",
       name: "Laundry Services",
