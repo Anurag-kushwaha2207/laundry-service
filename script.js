@@ -746,24 +746,30 @@ async function submitBooking() {
       }
     };
 
+    const activeKey = options.key;
+    const isDemoKey = !activeKey || activeKey === "rzp_test_laundry_demo_key" || activeKey.includes("demo");
+
     const rzp = new Razorpay(options);
 
     rzp.on('payment.failed', function (response) {
-      console.warn("Razorpay API Key invalid/demo mode:", response.error);
+      console.warn("Razorpay Payment Failed:", response.error);
 
-      const simulateSuccess = confirm(
-        "💡 Razorpay Demo Mode Detected:\n\n" +
-        "To test with live Razorpay UPI/Cards, paste your actual Key ID from razorpay.com into script.js.\n\n" +
-        "Would you like to SIMULATE a Successful Test Payment now?"
-      );
+      if (isDemoKey) {
+        const simulateSuccess = confirm(
+          "💡 Razorpay Demo Mode Detected:\n\n" +
+          "To test with live Razorpay UPI/Cards, paste your actual Key ID from razorpay.com into script.js.\n\n" +
+          "Would you like to SIMULATE a Successful Test Payment now?"
+        );
 
-      if (simulateSuccess) {
-        newBooking.status = "Paid";
-        newBooking.paymentId = `pay_simulated_${Date.now()}`;
-        finalizeLaundryBooking(name, targetEmail, phone, newBooking, totalBill, bookingId);
-      } else {
-        alert("Payment was not completed.");
+        if (simulateSuccess) {
+          newBooking.status = "Paid";
+          newBooking.paymentId = `pay_simulated_${Date.now()}`;
+          finalizeLaundryBooking(name, targetEmail, phone, newBooking, totalBill, bookingId);
+          return;
+        }
       }
+
+      alert("❌ Payment Failed: " + (response.error.description || response.error.reason || "Transaction not completed."));
     });
 
     rzp.open();
