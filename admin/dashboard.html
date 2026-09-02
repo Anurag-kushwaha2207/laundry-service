@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Laundry Rental Marketplace</title>
+  <link rel="stylesheet" href="../style.css">
+  <!-- Google Fonts & Ionicons -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+</head>
+<body class="admin-body">
+
+  <header class="admin-header">
+    <div class="admin-header-content">
+      <div class="admin-logo">
+        <ion-icon name="shield-checkmark"></ion-icon>
+        <h2>Admin Dashboard</h2>
+      </div>
+      <a href="../index.html" class="back-home-btn">
+        <ion-icon name="home-outline"></ion-icon> Main Website
+      </a>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-container">
+      <div class="admin-title-section">
+        <h1>Rental Item Review & Management</h1>
+        <p>Review submitted clothes from owners before they go live on the marketplace.</p>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="admin-tabs">
+        <button class="tab-btn active" data-status="pending">
+          <ion-icon name="time-outline"></ion-icon> Pending Approval (<span id="pendingCount">0</span>)
+        </button>
+        <button class="tab-btn" data-status="approved">
+          <ion-icon name="checkmark-circle-outline"></ion-icon> Approved (<span id="approvedCount">0</span>)
+        </button>
+        <button class="tab-btn" data-status="rejected">
+          <ion-icon name="close-circle-outline"></ion-icon> Rejected (<span id="rejectedCount">0</span>)
+        </button>
+      </div>
+
+      <!-- Item Grid / List -->
+      <div id="adminItemsList" class="admin-items-grid">
+        <div class="loading-spinner">
+          <ion-icon name="sync-outline" class="spin-icon"></ion-icon>
+          <p>Loading items from database...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="../js/admin-dashboard.js"></script>
+</body>
+</html>

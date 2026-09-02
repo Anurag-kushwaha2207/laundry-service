@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Rental Collection - Premium Ethnic & Designer Wear</title>
+  <link rel="stylesheet" href="../style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+</head>
+<body class="browse-body">
+
+  <!-- Header Navigation -->
+  <header class="browse-header">
+    <div class="browse-header-container">
+      <a href="../index.html" class="browse-logo">
+        <ion-icon name="shirt-outline"></ion-icon>
+        <span>Laundry & Rentals</span>
+      </a>
+
+      <nav class="browse-nav">
+        <a href="../index.html">Home</a>
+        <a href="browse.html" class="active">Browse Marketplace</a>
+        <a href="list-item.html" class="list-item-btn">
+          <ion-icon name="add-circle-outline"></ion-icon> List Your Clothes
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="browse-hero">
+    <div class="browse-hero-content">
+      <h1>👗 Explore Premium Outfits on Rent</h1>
+      <p>Rent high-quality Sarees, Lehengas, Sherwanis & Suits at a fraction of retail price.</p>
+    </div>
+  </section>
+
+  <!-- Main Marketplace Container -->
+  <main class="browse-container">
+
+    <!-- Filters Bar -->
+    <aside class="filters-sidebar">
+      <div class="filter-group">
+        <label for="searchInput">
+          <ion-icon name="search-outline"></ion-icon> Search
+        </label>
+        <input type="text" id="searchInput" placeholder="Search by title, size...">
+      </div>
+
+      <div class="filter-group">
+        <label for="categoryFilter">
+          <ion-icon name="grid-outline"></ion-icon> Category
+        </label>
+        <select id="categoryFilter">
+          <option value="all">All Categories</option>
+          <option value="saree">Saree</option>
+          <option value="lehenga">Lehenga</option>
+          <option value="suit">Suit</option>
+          <option value="sherwani">Sherwani</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="maxPriceInput">
+          <ion-icon name="cash-outline"></ion-icon> Max Price / Day (₹)
+        </label>
+        <input type="number" id="maxPriceInput" placeholder="e.g. 2000" min="0">
+      </div>
+
+      <button id="resetFiltersBtn" class="reset-btn">
+        <ion-icon name="refresh-outline"></ion-icon> Reset Filters
+      </button>
+    </aside>
+
+    <!-- Marketplace Products Grid -->
+    <section class="marketplace-grid-section">
+      <div class="results-header">
+        <p id="resultsCount">Loading available items...</p>
+      </div>
+
+      <div id="browseGrid" class="browse-items-grid">
+        <div class="loading-spinner">
+          <ion-icon name="sync-outline" class="spin-icon"></ion-icon>
+          <p>Fetching approved rental listings...</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script type="module" src="../js/rental-browse.js"></script>
+</body>
+</html>
