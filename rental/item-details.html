@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Outfit Details & Booking - Laundry Rental Marketplace</title>
+  <link rel="stylesheet" href="../style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+</head>
+<body class="browse-body">
+
+  <!-- Header Navigation -->
+  <header class="browse-header">
+    <div class="browse-header-container">
+      <a href="../index.html" class="browse-logo">
+        <ion-icon name="shirt-outline"></ion-icon>
+        <span>Laundry & Rentals</span>
+      </a>
+
+      <nav class="browse-nav">
+        <a href="../index.html">Home</a>
+        <a href="browse.html">Browse Marketplace</a>
+        <a href="list-item.html" class="list-item-btn">
+          <ion-icon name="add-circle-outline"></ion-icon> List Your Clothes
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="details-container">
+    <div class="back-link-wrapper">
+      <a href="browse.html" class="back-btn">
+        <ion-icon name="arrow-back-outline"></ion-icon> Back to Marketplace
+      </a>
+    </div>
+
+    <!-- Product Layout -->
+    <div id="itemDetailsWrapper" class="details-layout">
+      <!-- Loading Spinner state -->
+      <div class="loading-spinner full-width">
+        <ion-icon name="sync-outline" class="spin-icon"></ion-icon>
+        <p>Loading outfit details...</p>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="../js/item-details.js"></script>
+</body>
+</html>
