@@ -4,11 +4,13 @@ import {
   getDoc, 
   collection, 
   addDoc, 
+  updateDoc, 
   query, 
   where, 
   getDocs, 
   serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { openRazorpayCheckout } from "./razorpay-config.js";
 
 const wrapper = document.getElementById("itemDetailsWrapper");
 
@@ -141,7 +143,7 @@ function renderItemPage() {
       </div>
 
       <!-- Booking Form -->
-      <div class="booking-card">
+      <div class="booking-card" id="bookingCardBox">
         <h3><ion-icon name="calendar-outline"></ion-icon> Select Rental Dates</h3>
         <form id="bookingForm">
           <div class="date-picker-grid">
@@ -183,7 +185,7 @@ function renderItemPage() {
           </div>
 
           <button type="submit" id="bookNowBtn" class="book-now-submit-btn">
-            <ion-icon name="flash"></ion-icon> Book & Proceed to Pay
+            <ion-icon name="card-outline"></ion-icon> Pay Now with Razorpay
           </button>
         </form>
         <p id="bookingStatusMsg" class="booking-status-msg"></p>
@@ -268,7 +270,6 @@ function recalculatePriceAndAvailability() {
     if (b.startDate && b.endDate) {
       const bStart = new Date(b.startDate);
       const bEnd = new Date(b.endDate);
-      // Date range overlap formula: (start <= bEnd && end >= bStart)
       if (start <= bEnd && end >= bStart) {
         isConflicting = true;
         break;
@@ -287,13 +288,13 @@ function recalculatePriceAndAvailability() {
   }
 }
 
-// Handle Form Submission & Create Booking Document
+// Handle Form Submission & Trigger Razorpay Modal
 async function handleBookingSubmit(e) {
   e.preventDefault();
   const msgEl = document.getElementById("bookingStatusMsg");
   const bookNowBtn = document.getElementById("bookNowBtn");
 
-  msgEl.textContent = "Processing your booking...";
+  msgEl.textContent = "Creating booking reservation...";
   bookNowBtn.disabled = true;
 
   try {
@@ -316,7 +317,7 @@ async function handleBookingSubmit(e) {
     const serviceFee = Math.round(rentalAmount * 0.10);
     const grandTotal = rentalAmount + securityDeposit + serviceFee;
 
-    // Create record in Firestore rental_bookings collection
+    // 1. Create record in Firestore rental_bookings collection
     const bookingDoc = await addDoc(collection(db, "rental_bookings"), {
       itemId: itemData.id,
       itemTitle: itemData.title || 'Outfit',
@@ -336,18 +337,99 @@ async function handleBookingSubmit(e) {
       createdAt: serverTimestamp()
     });
 
-    msgEl.innerHTML = `✅ Booking Initiated! (ID: <code>${bookingDoc.id}</code>). Preparing payment...`;
-    
-    // Auto-reset button state
-    setTimeout(() => {
-      bookNowBtn.disabled = false;
-    }, 3000);
+    msgEl.textContent = "Launching Razorpay Checkout...";
+
+    // 2. Open Razorpay Modal
+    openRazorpayCheckout({
+      amount: grandTotal,
+      bookingId: bookingDoc.id,
+      itemTitle: itemData.title,
+      userEmail: user.email,
+      onSuccess: async (payResponse) => {
+        // Update booking status in Firestore
+        const bookingRef = doc(db, "rental_bookings", bookingDoc.id);
+        await updateDoc(bookingRef, {
+          status: "confirmed",
+          paymentId: payResponse.razorpay_payment_id,
+          paidAt: serverTimestamp()
+        });
+
+        // Add transaction log to payments collection
+        await addDoc(collection(db, "payments"), {
+          bookingId: bookingDoc.id,
+          itemId: itemData.id,
+          renterId: user.uid,
+          amount: grandTotal,
+          paymentId: payResponse.razorpay_payment_id,
+          razorpayOrderId: payResponse.razorpay_order_id,
+          status: "success",
+          createdAt: serverTimestamp()
+        });
+
+        // Render Confirmation Receipt UI
+        renderConfirmationReceipt({
+          bookingId: bookingDoc.id,
+          paymentId: payResponse.razorpay_payment_id,
+          title: itemData.title,
+          startDate: startDateStr,
+          endDate: endDateStr,
+          grandTotal: grandTotal
+        });
+      },
+      onFailure: (err) => {
+        msgEl.innerHTML = `⚠️ Payment not completed. Booking status remains pending. (${err.message || 'Cancelled'})`;
+        bookNowBtn.disabled = false;
+      }
+    });
 
   } catch (error) {
-    console.error("Booking error:", error);
+    console.error("Booking submission error:", error);
     msgEl.textContent = "❌ Booking failed: " + error.message;
     bookNowBtn.disabled = false;
   }
+}
+
+// Render Confirmation Receipt UI inside bookingCardBox
+function renderConfirmationReceipt({ bookingId, paymentId, title, startDate, endDate, grandTotal }) {
+  const box = document.getElementById("bookingCardBox");
+  box.innerHTML = `
+    <div class="payment-success-card">
+      <div class="success-icon-badge">
+        <ion-icon name="checkmark-circle-sharp"></ion-icon>
+      </div>
+      <h2>Booking Confirmed!</h2>
+      <p class="success-subtitle">Thank you! Your outfit has been reserved successfully.</p>
+      
+      <div class="receipt-details">
+        <div class="receipt-row">
+          <span>Booking ID:</span>
+          <code>${bookingId}</code>
+        </div>
+        <div class="receipt-row">
+          <span>Payment ID:</span>
+          <code>${paymentId}</code>
+        </div>
+        <div class="receipt-row">
+          <span>Item:</span>
+          <strong>${title}</strong>
+        </div>
+        <div class="receipt-row">
+          <span>Rental Period:</span>
+          <span>${startDate} to ${endDate}</span>
+        </div>
+        <div class="receipt-row grand">
+          <span>Amount Paid:</span>
+          <span class="paid-amount">₹${grandTotal}</span>
+        </div>
+      </div>
+
+      <div class="receipt-actions">
+        <a href="browse.html" class="browse-more-btn">
+          <ion-icon name="shirt-outline"></ion-icon> Browse More Clothes
+        </a>
+      </div>
+    </div>
+  `;
 }
 
 // Start on DOM ready

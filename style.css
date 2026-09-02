@@ -2160,4 +2160,99 @@ body{
   }
 }
 
+/* ================= PAYMENT SUCCESS RECEIPT STYLES ================= */
+.payment-success-card {
+  text-align: center;
+  padding: 25px 15px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.success-icon-badge {
+  font-size: 64px;
+  color: #16a34a;
+  margin-bottom: 10px;
+  line-height: 1;
+}
+
+.payment-success-card h2 {
+  font-size: 24px;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+}
+
+.success-subtitle {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 22px;
+}
+
+.receipt-details {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 22px;
+  text-align: left;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13.5px;
+  color: #475569;
+  padding: 8px 0;
+  border-bottom: 1px dashed #f1f5f9;
+}
+
+.receipt-row:last-child {
+  border-bottom: none;
+}
+
+.receipt-row code {
+  background: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #0f172a;
+}
+
+.receipt-row.grand {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1.5px dashed #cbd5e1;
+}
+
+.paid-amount {
+  color: #16a34a;
+  font-size: 20px;
+}
+
+.receipt-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.browse-more-btn {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  text-decoration: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.2s;
+}
+
+.browse-more-btn:hover {
+  opacity: 0.95;
+}
+
+
 
