@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>List Your Item for Rent</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="rental-form-container">
+  <h2>👗 अपना Item Rent पर List करें</h2>
+  <form id="listItemForm">
+
+    <label>Item Title</label>
+    <input type="text" id="title" required placeholder="e.g. Red Bridal Lehenga">
+
+    <label>Category</label>
+    <select id="category" required>
+      <option value="">-- Select --</option>
+      <option value="saree">Saree</option>
+      <option value="lehenga">Lehenga</option>
+      <option value="suit">Suit</option>
+      <option value="sherwani">Sherwani</option>
+      <option value="other">Other</option>
+    </select>
+
+    <label>Size</label>
+    <input type="text" id="size" required placeholder="e.g. M, L, Free Size">
+
+    <label>Condition</label>
+    <select id="condition" required>
+      <option value="new">New</option>
+      <option value="like-new">Like New</option>
+      <option value="good">Good</option>
+    </select>
+
+    <label>Price per day (₹)</label>
+    <input type="number" id="pricePerDay" required min="1">
+
+    <label>Security Deposit (₹)</label>
+    <input type="number" id="securityDeposit" required min="1">
+
+    <label>Upload Photos (minimum 3)</label>
+    <input type="file" id="itemPhotos" accept="image/*" multiple required>
+
+    <div class="consent-box">
+      <input type="checkbox" id="consentCheck" required>
+      <label for="consentCheck">
+        मैं सहमत हूं कि यह item rent पर देने से पहले और हर वापसी के बाद
+        professionally clean किया जाएगा, और मैं इसकी ownership की पुष्टि करता हूं।
+      </label>
+    </div>
+
+    <button type="submit" id="submitBtn">Submit for Review</button>
+  </form>
+  <p id="statusMsg"></p>
+</div>
+
+<script type="module" src="../js/rental.js"></script>
+</body>
+</html>
