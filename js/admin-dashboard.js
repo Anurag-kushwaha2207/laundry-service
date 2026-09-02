@@ -3,6 +3,7 @@ import {
   collection, 
   onSnapshot, 
   doc, 
+  getDoc,
   updateDoc, 
   addDoc, 
   query, 
@@ -22,8 +23,53 @@ let currentTab = "pending";
 let allItems = [];
 let activeBookings = [];
 
-// Initialize real-time listeners for items and bookings
+// Initialize & Perform Route Guard Security Access Check (Step C)
 function initDashboard() {
+  const securityOverlay = document.getElementById("securityOverlay");
+
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      alert("🔒 Access Denied: You must be logged in as an Admin.");
+      window.location.href = "../index.html";
+      return;
+    }
+
+    try {
+      let isAdmin = false;
+      // 1. Check users/{user.uid}
+      const userDocRef = doc(db, "users", user.uid);
+      let userSnap = await getDoc(userDocRef);
+
+      if (userSnap.exists() && userSnap.data().role === "admin") {
+        isAdmin = true;
+      } else if (user.email) {
+        // 2. Fallback check users/{cleanEmail}
+        const emailDocRef = doc(db, "users", user.email.toLowerCase().trim());
+        const emailSnap = await getDoc(emailDocRef);
+        if (emailSnap.exists() && emailSnap.data().role === "admin") {
+          isAdmin = true;
+        }
+      }
+
+      if (!isAdmin) {
+        alert("🔒 Access Denied: Your account does not have Admin privileges.");
+        window.location.href = "../index.html";
+        return;
+      }
+
+      // Hide security overlay and load dashboard content
+      if (securityOverlay) securityOverlay.style.display = "none";
+      loadDashboardData();
+
+    } catch (err) {
+      console.error("Admin route guard error:", err);
+      alert("Security Verification Failed: " + err.message);
+      window.location.href = "../index.html";
+    }
+  });
+}
+
+function loadDashboardData() {
   // Listen to rental items
   const rentalQuery = query(collection(db, "rental_items"), orderBy("createdAt", "desc"));
   onSnapshot(rentalQuery, (snapshot) => {

@@ -28,12 +28,20 @@
 
   <link rel="stylesheet" href="style.css">
 
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
   <!-- EmailJS -->
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
   <!-- Firebase App & Firestore (Compat Version) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+  <!-- Ionicons -->
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 </head>
 
 <body>
@@ -51,7 +59,7 @@
       <li><a href="#services">Services</a></li>
       <li><a href="rental/browse.html">👗 Rent Clothes</a></li>
       <li><a href="rental/list-item.html">➕ List For Rent</a></li>
-      <li><a href="admin/dashboard.html">🛡️ Admin</a></li>
+      <li id="adminNavLink" style="display: none;"><a href="admin/dashboard.html">🛡️ Admin</a></li>
       <li><a href="#about">About</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>

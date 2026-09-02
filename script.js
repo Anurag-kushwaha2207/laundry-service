@@ -484,12 +484,25 @@ function updateNavbarUser(name) {
   if (navUsername) {
     navUsername.innerText = name;
   }
+
+  // Step B: Dynamic Admin Link Security Check
+  const adminNavLink = document.getElementById("adminNavLink");
+  if (adminNavLink) {
+    let isAdmin = false;
+    if (currentUser && (currentUser.role === "admin" || currentUser.email === "anuragkushwaha2207@outlook.com")) {
+      isAdmin = true;
+    }
+    adminNavLink.style.display = isAdmin ? "inline-block" : "none";
+  }
 }
 
 function logoutUser() {
   currentUser = null;
   localStorage.removeItem("laundry_current_user");
   updateNavbarUser("Username");
+
+  const adminNavLink = document.getElementById("adminNavLink");
+  if (adminNavLink) adminNavLink.style.display = "none";
   
   // Clear cart prefill inputs
   const cartName = document.getElementById("cartName");
@@ -701,10 +714,48 @@ async function submitBooking() {
     date: formattedDate,
     items: JSON.parse(JSON.stringify(cart)),
     total: totalBill,
-    status: "Received"
+    status: "Pending Payment"
   };
 
-  // 1. Instantly save booking to local mock database for immediate availability
+  // Step 14: Trigger Razorpay Payment Modal for Laundry Checkout
+  if (typeof Razorpay !== "undefined") {
+    const options = {
+      key: "rzp_test_laundry_demo_key",
+      amount: totalBill * 100,
+      currency: "INR",
+      name: "Laundry Services",
+      description: `Payment for Laundry Order #${bookingId}`,
+      image: "https://cdn-icons-png.flaticon.com/512/3159/3159066.png",
+      handler: function (response) {
+        newBooking.status = "Paid";
+        newBooking.paymentId = response.razorpay_payment_id;
+        finalizeLaundryBooking(name, targetEmail, phone, newBooking, totalBill, bookingId);
+      },
+      prefill: {
+        name: name,
+        email: targetEmail,
+        contact: phone
+      },
+      theme: {
+        color: "#2196f3"
+      },
+      modal: {
+        ondismiss: function () {
+          alert("Payment cancelled. You can retry checkout anytime.");
+        }
+      }
+    };
+    const rzp = new Razorpay(options);
+    rzp.open();
+  } else {
+    // Fallback if Razorpay SDK isn't loaded
+    newBooking.status = "Paid";
+    finalizeLaundryBooking(name, targetEmail, phone, newBooking, totalBill, bookingId);
+  }
+}
+
+function finalizeLaundryBooking(name, targetEmail, phone, newBooking, totalBill, bookingId) {
+  // 1. Instantly save booking to local mock database
   let localUser = getMockUser(targetEmail);
   if (!localUser) {
     localUser = {

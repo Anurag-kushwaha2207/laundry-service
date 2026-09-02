@@ -2560,6 +2560,50 @@ body{
   }
 }
 
+/* ================= SECURITY ROUTE GUARD OVERLAY ================= */
+.security-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #0f172a;
+  color: #ffffff;
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+}
+
+.security-box {
+  background: #1e293b;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  max-width: 450px;
+  width: 90%;
+}
+
+.security-box ion-icon {
+  font-size: 64px;
+  color: #38bdf8;
+  margin-bottom: 15px;
+}
+
+.security-box h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: #f8fafc;
+}
+
+.security-box p {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+
 
 
 
