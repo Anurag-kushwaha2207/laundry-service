@@ -485,19 +485,11 @@ function updateNavbarUser(name) {
     navUsername.innerText = name;
   }
 
-  // Step B: Dynamic Admin Link Security Check
+  // Step B: Navbar Admin Link Visibility
   const adminNavLink = document.getElementById("adminNavLink");
   if (adminNavLink) {
-    let isAdmin = false;
-    if (currentUser) {
-      const email = (currentUser.email || "").toLowerCase().trim();
-      const userRole = (currentUser.role || "").toLowerCase().trim();
-      const userName = (currentUser.name || name || "").toLowerCase().trim();
-      if (userRole === "admin" || email.includes("anurag") || email.includes("ps591362") || userName.includes("anurag")) {
-        isAdmin = true;
-      }
-    }
-    adminNavLink.style.display = isAdmin ? "inline-block" : "none";
+    const isLoggedIn = name && name !== "Username";
+    adminNavLink.style.display = isLoggedIn ? "inline-block" : "inline-block";
   }
 }
 
