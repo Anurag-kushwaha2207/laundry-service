@@ -37,10 +37,8 @@ function initDashboard() {
     try {
       const userEmail = (user.email || "").toLowerCase().trim();
       const userName = (user.displayName || "").toLowerCase().trim();
-      const userDocRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userDocRef);
-
-      if (userEmail.includes("anurag") || userEmail.includes("ps591362") || userName.includes("anurag") || user.uid) {
+      const allowedAdmins = ["ps591362@gmail.com", "anuragkushwaha2207@outlook.com"];
+      if (allowedAdmins.includes(userEmail)) {
         isAdmin = true;
       } else if (userSnap.exists() && userSnap.data().role === "admin") {
         isAdmin = true;

@@ -485,11 +485,19 @@ function updateNavbarUser(name) {
     navUsername.innerText = name;
   }
 
-  // Step B: Navbar Admin Link Visibility
+  // Step B: Navbar Admin Link Visibility (Strict Admin Only)
   const adminNavLink = document.getElementById("adminNavLink");
   if (adminNavLink) {
-    const isLoggedIn = name && name !== "Username";
-    adminNavLink.style.display = isLoggedIn ? "inline-block" : "inline-block";
+    let isAdmin = false;
+    if (currentUser) {
+      const email = (currentUser.email || "").toLowerCase().trim();
+      const userRole = (currentUser.role || "").toLowerCase().trim();
+      const allowedAdmins = ["ps591362@gmail.com", "anuragkushwaha2207@outlook.com"];
+      if (allowedAdmins.includes(email) || userRole === "admin") {
+        isAdmin = true;
+      }
+    }
+    adminNavLink.style.display = isAdmin ? "inline-block" : "none";
   }
 }
 
