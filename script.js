@@ -479,25 +479,44 @@ function cancelOTP() {
   }
 }
 
-function updateNavbarUser(name) {
+async function updateNavbarUser(name) {
   const navUsername = document.getElementById("navUsername");
   if (navUsername) {
     navUsername.innerText = name;
   }
 
-  // Step B: Navbar Admin Link Visibility (Strict Admin Only)
+  // Step B: Navbar Admin Link Visibility (Strict Database Admin Check)
   const adminNavLink = document.getElementById("adminNavLink");
-  if (adminNavLink) {
-    let isAdmin = false;
-    if (currentUser) {
-      const email = (currentUser.email || "").toLowerCase().trim();
-      const userRole = (currentUser.role || "").toLowerCase().trim();
-      const allowedAdmins = ["ps591362@gmail.com", "anuragkushwaha2207@outlook.com"];
-      if (allowedAdmins.includes(email) || userRole === "admin") {
-        isAdmin = true;
+  if (!adminNavLink) return;
+
+  // Hide by default for all normal users
+  adminNavLink.style.display = "none";
+
+  if (!currentUser) return;
+
+  const email = (currentUser.email || "").toLowerCase().trim();
+  const userRole = (currentUser.role || "").toLowerCase().trim();
+  const allowedAdmins = ["ps591362@gmail.com", "anuragkushwaha2207@outlook.com"];
+
+  // 1. Direct Allowed Admins Check
+  if (allowedAdmins.includes(email) || userRole === "admin") {
+    adminNavLink.style.display = "inline-block";
+    return;
+  }
+
+  // 2. Dynamic Firestore Database Role Verification
+  if (email && typeof db !== "undefined") {
+    try {
+      const userRef = doc(db, "users", email);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists() && userSnap.data().role === "admin") {
+        currentUser.role = "admin";
+        localStorage.setItem("laundry_current_user", JSON.stringify(currentUser));
+        adminNavLink.style.display = "inline-block";
       }
+    } catch (err) {
+      console.log("Database admin verification error:", err);
     }
-    adminNavLink.style.display = isAdmin ? "inline-block" : "none";
   }
 }
 
