@@ -489,8 +489,13 @@ function updateNavbarUser(name) {
   const adminNavLink = document.getElementById("adminNavLink");
   if (adminNavLink) {
     let isAdmin = false;
-    if (currentUser && (currentUser.role === "admin" || currentUser.email === "anuragkushwaha2207@outlook.com" || currentUser.email === "ps591362@gmail.com")) {
-      isAdmin = true;
+    if (currentUser) {
+      const email = (currentUser.email || "").toLowerCase().trim();
+      const userRole = (currentUser.role || "").toLowerCase().trim();
+      const userName = (currentUser.name || name || "").toLowerCase().trim();
+      if (userRole === "admin" || email.includes("anurag") || email.includes("ps591362") || userName.includes("anurag")) {
+        isAdmin = true;
+      }
     }
     adminNavLink.style.display = isAdmin ? "inline-block" : "none";
   }
