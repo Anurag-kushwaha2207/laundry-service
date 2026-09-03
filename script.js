@@ -479,48 +479,68 @@ function cancelOTP() {
   }
 }
 
-async function updateNavbarUser(name) {
+let realTimeAdminUnsubscribe = null;
+
+function setupRealtimeAdminListener() {
+  const adminNavLink = document.getElementById("adminNavLink");
+  if (!adminNavLink) return;
+
+  // Unsubscribe previous real-time listener if active
+  if (typeof realTimeAdminUnsubscribe === "function") {
+    realTimeAdminUnsubscribe();
+    realTimeAdminUnsubscribe = null;
+  }
+
+  if (!currentUser || !currentUser.email) {
+    adminNavLink.style.display = "none";
+    return;
+  }
+
+  const cleanEmail = (currentUser.email || "").toLowerCase().trim();
+  const allowedAdmins = ["ps591362@gmail.com", "anuragkushwaha2207@outlook.com"];
+
+  // Static check for primary admins
+  if (allowedAdmins.includes(cleanEmail)) {
+    adminNavLink.style.display = "inline-block";
+  } else {
+    adminNavLink.style.display = "none";
+  }
+
+  // REAL-TIME FIRESTORE ON-SNAPSHOT LISTENER
+  if (db && typeof db.collection === "function") {
+    try {
+      realTimeAdminUnsubscribe = db.collection("users").doc(cleanEmail).onSnapshot((docSnap) => {
+        if (docSnap.exists && docSnap.data() && docSnap.data().role === "admin") {
+          console.log("⚡ [Realtime Admin Listener] Admin access granted for:", cleanEmail);
+          adminNavLink.style.display = "inline-block";
+        } else if (!allowedAdmins.includes(cleanEmail)) {
+          console.log("⚡ [Realtime Admin Listener] Admin access revoked for:", cleanEmail);
+          adminNavLink.style.display = "none";
+        }
+      }, (err) => {
+        console.warn("Realtime admin listener warning:", err);
+      });
+    } catch (err) {
+      console.warn("Could not setup realtime admin listener:", err);
+    }
+  }
+}
+
+function updateNavbarUser(name) {
   const navUsername = document.getElementById("navUsername");
   if (navUsername) {
     navUsername.innerText = name;
   }
 
-  // Step B: Navbar Admin Link Visibility (Strict Email & DB Role Check)
-  const adminNavLink = document.getElementById("adminNavLink");
-  if (!adminNavLink) return;
-
-  // Always hide by default for all normal users
-  adminNavLink.style.display = "none";
-
-  if (!currentUser || !currentUser.email) return;
-
-  const email = (currentUser.email || "").toLowerCase().trim();
-  const allowedAdmins = ["ps591362@gmail.com", "anuragkushwaha2207@outlook.com"];
-
-  // 1. Check if current logged-in email is in authorized admins list
-  if (allowedAdmins.includes(email)) {
-    adminNavLink.style.display = "inline-block";
-    return;
-  }
-
-  // 2. Fresh Firestore Database Role Verification for current email
-  if (typeof db !== "undefined") {
-    try {
-      const userRef = doc(db, "users", email);
-      const userSnap = await getDoc(userRef);
-      if (userSnap.exists() && userSnap.data() && userSnap.data().role === "admin") {
-        adminNavLink.style.display = "inline-block";
-      } else {
-        adminNavLink.style.display = "none";
-      }
-    } catch (err) {
-      console.log("Database admin verification error:", err);
-      adminNavLink.style.display = "none";
-    }
-  }
+  setupRealtimeAdminListener();
 }
 
 function logoutUser() {
+  if (typeof realTimeAdminUnsubscribe === "function") {
+    realTimeAdminUnsubscribe();
+    realTimeAdminUnsubscribe = null;
+  }
+
   currentUser = null;
   localStorage.removeItem("laundry_current_user");
   updateNavbarUser("Username");
