@@ -372,22 +372,24 @@ async function sendLoginOTP() {
     isRegistering: false
   };
 
-  // Trigger Firebase Mobile SMS OTP
+  // Real Production Firebase Mobile SMS OTP Trigger
   initRecaptcha();
   if (typeof firebase !== "undefined" && firebase.auth && window.recaptchaVerifier) {
     try {
       const appVerifier = window.recaptchaVerifier;
       window.confirmationResult = await firebase.auth().signInWithPhoneNumber(formattedPhone, appVerifier);
-      alert(`📲 Firebase Mobile SMS OTP sent to: ${formattedPhone}`);
+      alert(`📲 SMS OTP sent to your Mobile Number (${formattedPhone}). Please check your phone SMS!`);
     } catch (firebaseErr) {
-      console.warn("Firebase Phone Auth notice:", firebaseErr);
-      alert(`📱 Mobile SMS OTP Code sent to: ${formattedPhone}\n\n(Verification Code: ${otp})`);
+      console.error("Firebase Phone Auth SMS Error:", firebaseErr);
+      alert(`❌ Could not send SMS OTP to ${formattedPhone}: ${firebaseErr.message || "Please check phone number."}`);
+      return;
     }
   } else {
-    alert(`📱 Mobile SMS OTP Code sent to: ${formattedPhone}\n\n(Verification Code: ${otp})`);
+    alert("❌ Firebase Auth SDK not loaded properly. Please refresh the page and try again.");
+    return;
   }
 
-  document.getElementById("otpSubtitle").innerText = `📱 Mobile OTP code sent to phone number: ${formattedPhone}`;
+  document.getElementById("otpSubtitle").innerText = `📱 Mobile SMS OTP code sent to: ${formattedPhone}`;
   switchAuthView('otp');
 }
 
@@ -419,32 +421,31 @@ async function sendRegisterOTP() {
 
   let formattedPhone = phone.startsWith("+") ? phone : "+91" + phone.replace(/\D/g, '').slice(-10);
 
-  // Generate 6-digit OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
   tempAuthData = {
     name: name,
     email: email,
     phone: phone,
-    otp: otp,
     isRegistering: true
   };
 
-  // Trigger Firebase Mobile SMS OTP
+  // Real Production Firebase Mobile SMS OTP Trigger
   initRecaptcha();
   if (typeof firebase !== "undefined" && firebase.auth && window.recaptchaVerifier) {
     try {
       const appVerifier = window.recaptchaVerifier;
       window.confirmationResult = await firebase.auth().signInWithPhoneNumber(formattedPhone, appVerifier);
-      alert(`📲 Firebase Mobile SMS OTP sent to: ${formattedPhone}`);
+      alert(`📲 SMS OTP sent to your Mobile Number (${formattedPhone}). Please check your phone SMS!`);
     } catch (firebaseErr) {
-      console.warn("Firebase Phone Auth notice:", firebaseErr);
-      alert(`📱 Mobile SMS OTP Code sent to: ${formattedPhone}\n\n(Verification Code: ${otp})`);
+      console.error("Firebase Phone Auth SMS Error:", firebaseErr);
+      alert(`❌ Could not send SMS OTP to ${formattedPhone}: ${firebaseErr.message || "Please check phone number."}`);
+      return;
     }
   } else {
-    alert(`📱 Mobile SMS OTP Code sent to: ${formattedPhone}\n\n(Verification Code: ${otp})`);
+    alert("❌ Firebase Auth SDK not loaded properly. Please refresh the page and try again.");
+    return;
   }
 
-  document.getElementById("otpSubtitle").innerText = `📱 Mobile OTP code sent to phone number: ${formattedPhone}`;
+  document.getElementById("otpSubtitle").innerText = `📱 Mobile SMS OTP code sent to: ${formattedPhone}`;
   switchAuthView('otp');
 }
 
