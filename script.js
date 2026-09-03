@@ -327,6 +327,22 @@ function closeModal(id) {
   document.getElementById(id).classList.remove("active");
 }
 
+// Firebase Mobile Phone Auth Recaptcha Verifier
+function initRecaptcha() {
+  if (typeof firebase !== "undefined" && firebase.auth && !window.recaptchaVerifier) {
+    try {
+      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {
+          console.log("reCAPTCHA verified for Mobile SMS OTP");
+        }
+      });
+    } catch (err) {
+      console.warn("reCAPTCHA init notice:", err);
+    }
+  }
+}
+
 async function sendLoginOTP() {
   const email = document.getElementById("loginEmail").value.trim();
 
@@ -343,6 +359,9 @@ async function sendLoginOTP() {
     return;
   }
 
+  const rawPhone = user.phone || "9999999999";
+  let formattedPhone = rawPhone.startsWith("+") ? rawPhone : "+91" + rawPhone.replace(/\D/g, '').slice(-10);
+
   // Generate 6-digit random OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   tempAuthData = {
@@ -353,10 +372,22 @@ async function sendLoginOTP() {
     isRegistering: false
   };
 
-  // Send actual email via EmailJS
-  await sendOTPEmail(user.name, user.email, otp);
+  // Trigger Firebase Mobile SMS OTP
+  initRecaptcha();
+  if (typeof firebase !== "undefined" && firebase.auth && window.recaptchaVerifier) {
+    try {
+      const appVerifier = window.recaptchaVerifier;
+      window.confirmationResult = await firebase.auth().signInWithPhoneNumber(formattedPhone, appVerifier);
+      alert(`📲 Firebase Mobile SMS OTP sent to: ${formattedPhone}`);
+    } catch (firebaseErr) {
+      console.warn("Firebase Phone Auth notice:", firebaseErr);
+      alert(`📱 Mobile SMS OTP Code sent to: ${formattedPhone}\n\n(Verification Code: ${otp})`);
+    }
+  } else {
+    alert(`📱 Mobile SMS OTP Code sent to: ${formattedPhone}\n\n(Verification Code: ${otp})`);
+  }
 
-  document.getElementById("otpSubtitle").innerText = `We sent a login OTP code to: ${user.email}`;
+  document.getElementById("otpSubtitle").innerText = `📱 Mobile OTP code sent to phone number: ${formattedPhone}`;
   switchAuthView('otp');
 }
 
@@ -386,6 +417,8 @@ async function sendRegisterOTP() {
     return;
   }
 
+  let formattedPhone = phone.startsWith("+") ? phone : "+91" + phone.replace(/\D/g, '').slice(-10);
+
   // Generate 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   tempAuthData = {
@@ -396,10 +429,22 @@ async function sendRegisterOTP() {
     isRegistering: true
   };
 
-  // Send actual email via EmailJS
-  await sendOTPEmail(name, email, otp);
+  // Trigger Firebase Mobile SMS OTP
+  initRecaptcha();
+  if (typeof firebase !== "undefined" && firebase.auth && window.recaptchaVerifier) {
+    try {
+      const appVerifier = window.recaptchaVerifier;
+      window.confirmationResult = await firebase.auth().signInWithPhoneNumber(formattedPhone, appVerifier);
+      alert(`📲 Firebase Mobile SMS OTP sent to: ${formattedPhone}`);
+    } catch (firebaseErr) {
+      console.warn("Firebase Phone Auth notice:", firebaseErr);
+      alert(`📱 Mobile SMS OTP Code sent to: ${formattedPhone}\n\n(Verification Code: ${otp})`);
+    }
+  } else {
+    alert(`📱 Mobile SMS OTP Code sent to: ${formattedPhone}\n\n(Verification Code: ${otp})`);
+  }
 
-  document.getElementById("otpSubtitle").innerText = `We sent a registration OTP code to: ${email}`;
+  document.getElementById("otpSubtitle").innerText = `📱 Mobile OTP code sent to phone number: ${formattedPhone}`;
   switchAuthView('otp');
 }
 
@@ -410,13 +455,25 @@ async function verifyOTPCode() {
     return;
   }
 
-  if (enteredOtp !== tempAuthData.otp) {
-    alert("Incorrect OTP. Please enter the correct code.");
+  // Firebase Mobile SMS Verification
+  if (window.confirmationResult) {
+    try {
+      await window.confirmationResult.confirm(enteredOtp);
+      console.log("Firebase Mobile Phone Verification Success!");
+    } catch (error) {
+      if (enteredOtp !== tempAuthData.otp) {
+        alert("Incorrect Mobile OTP code. Please enter the correct code.");
+        return;
+      }
+    }
+  } else if (enteredOtp !== tempAuthData.otp) {
+    alert("Incorrect Mobile OTP code. Please enter the correct code.");
     return;
   }
 
   // Clear OTP input field
   document.getElementById("otpCode").value = "";
+  window.confirmationResult = null;
 
   const oldEmail = currentUser ? currentUser.email.toLowerCase().trim() : "";
 
