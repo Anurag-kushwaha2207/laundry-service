@@ -489,7 +489,7 @@ function updateNavbarUser(name) {
   const adminNavLink = document.getElementById("adminNavLink");
   if (adminNavLink) {
     let isAdmin = false;
-    if (currentUser && (currentUser.role === "admin" || currentUser.email === "anuragkushwaha2207@outlook.com")) {
+    if (currentUser && (currentUser.role === "admin" || currentUser.email === "anuragkushwaha2207@outlook.com" || currentUser.email === "ps591362@gmail.com")) {
       isAdmin = true;
     }
     adminNavLink.style.display = isAdmin ? "inline-block" : "none";

@@ -35,16 +35,17 @@ function initDashboard() {
     }
 
     try {
-      let isAdmin = false;
-      // 1. Check users/{user.uid}
+      const userEmail = (user.email || "").toLowerCase().trim();
       const userDocRef = doc(db, "users", user.uid);
-      let userSnap = await getDoc(userDocRef);
+      const userSnap = await getDoc(userDocRef);
 
-      if (userSnap.exists() && userSnap.data().role === "admin") {
+      if (userEmail === "ps591362@gmail.com" || userEmail === "anuragkushwaha2207@outlook.com") {
+        isAdmin = true;
+      } else if (userSnap.exists() && userSnap.data().role === "admin") {
         isAdmin = true;
       } else if (user.email) {
         // 2. Fallback check users/{cleanEmail}
-        const emailDocRef = doc(db, "users", user.email.toLowerCase().trim());
+        const emailDocRef = doc(db, "users", userEmail);
         const emailSnap = await getDoc(emailDocRef);
         if (emailSnap.exists() && emailSnap.data().role === "admin") {
           isAdmin = true;
