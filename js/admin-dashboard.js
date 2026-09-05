@@ -25,41 +25,67 @@ let allItems = [];
 let activeBookings = [];
 
 // Initialize & Perform Route Guard Security Access Check (Step C)
-function initDashboard() {
+async function initDashboard() {
   const securityOverlay = document.getElementById("securityOverlay");
 
-  auth.onAuthStateChanged(async (user) => {
-    if (!user) {
-      alert("🔒 Access Denied: You must be logged in as an Admin.");
-      window.location.href = "../index.html";
-      return;
-    }
-
+  // Helper to verify admin permissions solely from Firebase Firestore
+  async function checkUserAdminInFirebase(userEmail, uid) {
     try {
-      const userEmail = (user.email || "").toLowerCase().trim();
-      const userName = (user.displayName || "").toLowerCase().trim();
-      const allowedAdmins = ["ps591362@gmail.com", "anuragkushwaha2207@outlook.com"];
-      if (allowedAdmins.includes(userEmail)) {
-        isAdmin = true;
-      } else if (userSnap.exists() && userSnap.data().role === "admin") {
-        isAdmin = true;
+      if (userEmail) {
+        const cleanEmail = userEmail.toLowerCase().trim();
+        const userSnap = await getDoc(doc(db, "users", cleanEmail));
+        if (userSnap.exists() && userSnap.data().role === "admin") {
+          return true;
+        }
       }
-
-      if (!isAdmin) {
-        alert("🔒 Access Denied: Your account does not have Admin privileges.");
-        window.location.href = "../index.html";
-        return;
+      if (uid) {
+        const uidSnap = await getDoc(doc(db, "users", uid));
+        if (uidSnap.exists() && uidSnap.data().role === "admin") {
+          return true;
+        }
       }
+    } catch (e) {
+      console.warn("Firestore admin check error:", e);
+    }
+    return false;
+  }
 
-      // Hide security overlay and load dashboard content
+  // 1. Check local session storage (used by website login)
+  let localUser = null;
+  const savedUser = localStorage.getItem("laundry_current_user");
+  if (savedUser) {
+    try {
+      localUser = JSON.parse(savedUser);
+    } catch (e) {
+      localUser = null;
+    }
+  }
+
+  if (localUser && (localUser.email || localUser.uid)) {
+    const isAllowed = await checkUserAdminInFirebase(localUser.email, localUser.uid);
+    if (isAllowed) {
+      console.log("✅ Admin access verified via Firebase Firestore:", localUser.email);
       if (securityOverlay) securityOverlay.style.display = "none";
       loadDashboardData();
-
-    } catch (err) {
-      console.error("Admin route guard error:", err);
-      alert("Security Verification Failed: " + err.message);
-      window.location.href = "../index.html";
+      return;
     }
+  }
+
+  // 2. Check Firebase Auth state
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      const isAllowed = await checkUserAdminInFirebase(user.email, user.uid);
+      if (isAllowed) {
+        console.log("✅ Admin access verified via Firebase Auth:", user.email);
+        if (securityOverlay) securityOverlay.style.display = "none";
+        loadDashboardData();
+        return;
+      }
+    }
+
+    // If not marked as admin in Firebase Firestore
+    alert("🔒 Access Denied: Sirf unhi users ko permission hai jinko Firebase me 'admin' role diya gaya hai.");
+    window.location.href = "../index.html";
   });
 }
 

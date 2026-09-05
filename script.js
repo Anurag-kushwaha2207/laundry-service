@@ -514,25 +514,27 @@ function setupRealtimeAdminListener() {
   }
 
   const cleanEmail = (currentUser.email || "").toLowerCase().trim();
-  const allowedAdmins = ["ps591362@gmail.com", "anuragkushwaha2207@outlook.com"];
 
-  // Static check for primary admins
-  if (allowedAdmins.includes(cleanEmail)) {
+  // Default to hidden until verified from Firebase Firestore
+  adminNavLink.style.display = "none";
+
+  if (currentUser.role === "admin") {
     adminNavLink.style.display = "inline-block";
-  } else {
-    adminNavLink.style.display = "none";
   }
 
-  // REAL-TIME FIRESTORE ON-SNAPSHOT LISTENER
+  // REAL-TIME FIRESTORE ON-SNAPSHOT LISTENER (Sirf Firebase me jiska role 'admin' hai usko hi button dikhega)
   if (db && typeof db.collection === "function") {
     try {
       realTimeAdminUnsubscribe = db.collection("users").doc(cleanEmail).onSnapshot((docSnap) => {
         if (docSnap.exists && docSnap.data() && docSnap.data().role === "admin") {
-          console.log("⚡ [Realtime Admin Listener] Admin access granted for:", cleanEmail);
+          console.log("⚡ [Realtime Admin Listener] Admin role verified in Firebase for:", cleanEmail);
           adminNavLink.style.display = "inline-block";
-        } else if (!allowedAdmins.includes(cleanEmail)) {
-          console.log("⚡ [Realtime Admin Listener] Admin access revoked for:", cleanEmail);
+          if (currentUser) currentUser.role = "admin";
+        } else {
           adminNavLink.style.display = "none";
+          if (currentUser && currentUser.role === "admin") {
+            delete currentUser.role;
+          }
         }
       }, (err) => {
         console.warn("Realtime admin listener warning:", err);
