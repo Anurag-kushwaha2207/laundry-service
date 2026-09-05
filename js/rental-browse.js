@@ -3,9 +3,10 @@ import {
   collection, 
   onSnapshot, 
   query, 
-  where,
+  where, 
   orderBy 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initNotificationCenter } from "./notifications.js";
 
 const browseGrid = document.getElementById("browseGrid");
 const resultsCount = document.getElementById("resultsCount");
@@ -153,4 +154,7 @@ resetFiltersBtn.addEventListener("click", () => {
 });
 
 // Initialize on DOM load
-document.addEventListener("DOMContentLoaded", initBrowseMarketplace);
+document.addEventListener("DOMContentLoaded", () => {
+  initBrowseMarketplace();
+  initNotificationCenter();
+});

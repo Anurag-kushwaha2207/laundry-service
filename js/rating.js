@@ -44,7 +44,7 @@ export function openRatingModal({ bookingId, itemId, itemTitle, targetUserId, ro
     e.preventDefault();
     const user = auth.currentUser;
     if (!user) {
-      alert("Pehele login karein.");
+      alert("Please log in first to submit a review.");
       return;
     }
 

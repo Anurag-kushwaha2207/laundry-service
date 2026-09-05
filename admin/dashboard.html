@@ -56,6 +56,9 @@
         <button class="tab-btn" data-status="tracking">
           <ion-icon name="car-sport-outline"></ion-icon> Pickup & Delivery Tracking (<span id="trackingCount">0</span>)
         </button>
+        <button class="tab-btn" data-status="complaints">
+          <ion-icon name="chatbubbles-outline"></ion-icon> Complaints & Disputes (<span id="complaintsCount">0</span>)
+        </button>
       </div>
 
       <!-- Item Grid / List -->
@@ -68,6 +71,103 @@
     </div>
   </main>
 
-  <script type="module" src="../js/admin-dashboard.js?v=20260905_6"></script>
+  <!-- In-App Rejection Modal (No WhatsApp needed) -->
+  <div id="rejectReasonModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center;">
+    <div style="background: #ffffff; border-radius: 14px; padding: 24px; max-width: 480px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+      <h3 style="margin: 0 0 10px; color: #b91c1c; display: flex; align-items: center; gap: 8px; font-size: 18px;">
+        <ion-icon name="alert-circle-outline" style="font-size: 24px;"></ion-icon> Reject Item Listing
+      </h3>
+      <p style="font-size: 13.5px; color: #475569; margin-bottom: 16px;">
+        Please specify why this outfit is being rejected. The owner will receive this message directly in their in-app notification center:
+      </p>
+      
+      <label style="font-size: 12.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Select Reason</label>
+      <select id="rejectReasonPreset" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; margin-bottom: 12px; box-sizing: border-box;">
+        <option value="Photos are blurry or incomplete. Please upload clear front, back and fabric photos.">Photos are blurry or incomplete. Please upload clear front, back and fabric photos.</option>
+        <option value="Outfit condition or fabric does not meet our hygiene & quality standards.">Outfit condition or fabric does not meet our hygiene & quality standards.</option>
+        <option value="Rental price or security deposit is not realistic for this clothing item.">Rental price or security deposit is not realistic for this clothing item.</option>
+        <option value="Incomplete description or incorrect clothing category selected.">Incomplete description or incorrect clothing category selected.</option>
+        <option value="custom">Other custom reason (Type below)...</option>
+      </select>
+
+      <label style="font-size: 12.5px; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Custom Message / Explanation</label>
+      <textarea id="rejectCustomReason" rows="3" placeholder="Explain the issue clearly to the owner..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; box-sizing: border-box; font-family: inherit; margin-bottom: 18px; resize: vertical;"></textarea>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" id="cancelRejectBtn" style="background: #f1f5f9; color: #475569; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+        <button type="button" id="confirmRejectBtn" style="background: #dc2626; color: #ffffff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <ion-icon name="send"></ion-icon> Reject & Send In-App Notice
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security Deposit Inspection & Refund Modal -->
+  <div id="refundModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center;">
+    <div style="background: #ffffff; border-radius: 14px; padding: 24px; max-width: 520px; width: 92%; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+      <h3 style="margin: 0 0 8px; color: #0f172a; display: flex; align-items: center; gap: 8px; font-size: 18px;">
+        <ion-icon name="shield-checkmark-outline" style="color: #0284c7; font-size: 24px;"></ion-icon>
+        Quality Inspection & Deposit Settlement
+      </h3>
+      <p style="font-size: 13.5px; color: #64748b; margin-bottom: 16px;" id="refundModalSubtitle">
+        Inspect returned outfit condition and choose how to settle the customer's refundable security deposit.
+      </p>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13.5px;">
+          <span>Customer:</span>
+          <strong id="refundCustomerName">Anurag Singh</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13.5px;">
+          <span>Login / Mobile:</span>
+          <strong id="refundCustomerPhone">9837101838</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13.5px;">
+          <span>Refundable Deposit:</span>
+          <strong style="color: #15803d; font-size: 16px;" id="refundDepositAmount">₹10</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: #64748b;">
+          <span>Razorpay Payment ID:</span>
+          <code id="refundPaymentId">pay_xxxxxx</code>
+        </div>
+      </div>
+
+      <!-- Quick Payment Action Links for Admin -->
+      <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+        <a id="upiRefundLink" href="#" class="rider-btn call-btn" style="flex: 1; text-align: center; justify-content: center; background: #0284c7; color: #fff; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <ion-icon name="card-outline"></ion-icon> Pay via UPI (PhonePe/GPay)
+        </a>
+        <a id="razorpayDashboardLink" href="https://dashboard.razorpay.com" target="_blank" class="rider-btn sec-btn" style="flex: 1; text-align: center; justify-content: center; background: #334155; color: #fff; text-decoration: none; padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <ion-icon name="open-outline"></ion-icon> Razorpay Dashboard
+        </a>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="font-size: 13px; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Inspection Decision:</label>
+        <div style="display: flex; gap: 12px;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; color: #166534; font-weight: 600;">
+            <input type="radio" name="settlementType" value="refund" checked id="settleRefundRadio"> ✅ Outfit Spotless - Refund Full Deposit
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 13.5px; cursor: pointer; color: #b91c1c; font-weight: 600;">
+            <input type="radio" name="settlementType" value="forfeit" id="settleForfeitRadio"> ⚠️ Damaged - Deduct/Forfeit Deposit
+          </label>
+        </div>
+      </div>
+
+      <div id="damageReasonBox" style="display: none; margin-bottom: 16px;">
+        <label style="font-size: 12.5px; font-weight: 700; color: #b91c1c; display: block; margin-bottom: 5px;">Reason for Deposit Deduction *</label>
+        <input type="text" id="damageReasonInput" placeholder="e.g. Torn sleeve seam, permanent grease stains, burnt with iron" style="width: 100%; padding: 10px; border: 1px solid #fca5a5; border-radius: 8px; font-size: 13px; box-sizing: border-box;">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" id="cancelRefundBtn" style="background: #f1f5f9; color: #475569; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer;">Close</button>
+        <button type="button" id="confirmSettlementBtn" style="background: #15803d; color: #ffffff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <ion-icon name="checkmark-done"></ion-icon> Save & Complete Settlement
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="../js/admin-dashboard.js?v=20260905_9"></script>
 </body>
 </html>

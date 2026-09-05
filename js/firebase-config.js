@@ -1,7 +1,5 @@
-// Firebase Config Setup
-// Ye values aapko Firebase Console > Project Settings > General > "Your apps" section se milengi
-// Agar pehle se koi firebaseConfig object aapke purane script.js ya index.html me hai,
-// wahi actual values yaha paste karna — naya project mat banana.
+// Firebase Configuration Setup
+// Credentials linked from Firebase Console > Project Settings > General > "Your apps"
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -23,4 +21,4 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
 
-export { db, auth, storage };
+export { app, db, auth, storage };

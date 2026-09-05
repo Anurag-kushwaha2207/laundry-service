@@ -11,6 +11,8 @@ import {
   serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { openRazorpayCheckout } from "./razorpay-config.js";
+import { sendNotification, initNotificationCenter } from "./notifications.js";
+import { openMapPicker } from "./map-picker.js";
 
 const wrapper = document.getElementById("itemDetailsWrapper");
 
@@ -122,11 +124,14 @@ function renderItemPage() {
     ? itemData.images 
     : ["https://via.placeholder.com/500x600?text=No+Image"];
 
-  // Default dates: Today & Tomorrow
+  // Default dates: Today & Max 5 days
   const todayStr = new Date().toISOString().split("T")[0];
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split("T")[0];
+  const maxDate5 = new Date();
+  maxDate5.setDate(maxDate5.getDate() + 4);
+  const maxDate5Str = maxDate5.toISOString().split("T")[0];
 
   wrapper.innerHTML = `
     <!-- Left Column: Gallery -->
@@ -141,32 +146,42 @@ function renderItemPage() {
           `).join("")}
         </div>
       ` : ''}
+
+      <!-- Clean & Hygiene Assurance Badge -->
+      <div class="hygiene-badge">
+        <ion-icon name="sparkles"></ion-icon>
+        <div>
+          <strong>Washing Hub Sanitized</strong>
+          <p>Every outfit undergoes ultrasonic dry-cleaning & steam disinfection before delivery.</p>
+        </div>
+      </div>
     </div>
 
     <!-- Right Column: Info & Booking Form -->
     <div class="details-info">
-      <div class="info-header">
-        <span class="category-badge-pill">${itemData.category || 'Outfit'}</span>
-        <h1>${itemData.title || 'Untitled Outfit'}</h1>
-        <p class="verified-tag"><ion-icon name="checkmark-seal-sharp"></ion-icon> Professionally Cleaned & Verified</p>
+      <div class="item-badge-row">
+        <span class="category-pill">${itemData.category || 'Clothing'}</span>
+        <span class="condition-pill">${itemData.condition || 'Gently Used'}</span>
       </div>
 
-      <div class="spec-grid">
-        <div class="spec-card">
-          <span class="spec-label">Size</span>
-          <span class="spec-val">${itemData.size || 'Free Size'}</span>
+      <h1 class="details-title">${itemData.title || 'Untitled Outfit'}</h1>
+      <p class="details-location">
+        <ion-icon name="location-outline"></ion-icon> ${itemData.city || 'India'}
+      </p>
+
+      <!-- Pricing Summary Card -->
+      <div class="pricing-summary-card">
+        <div class="price-box">
+          <span class="label">Rental Price</span>
+          <span class="val">₹${itemData.pricePerDay || 0}<small>/day</small></span>
         </div>
-        <div class="spec-card">
-          <span class="spec-label">Condition</span>
-          <span class="spec-val cap">${itemData.condition || 'Good'}</span>
+        <div class="price-box">
+          <span class="label">Refundable Deposit</span>
+          <span class="val">₹${itemData.securityDeposit || 0}</span>
         </div>
-        <div class="spec-card">
-          <span class="spec-label">Rent / Day</span>
-          <span class="spec-val highlight">₹${itemData.pricePerDay}</span>
-        </div>
-        <div class="spec-card">
-          <span class="spec-label">Refundable Deposit</span>
-          <span class="spec-val">₹${itemData.securityDeposit}</span>
+        <div class="price-box">
+          <span class="label">Size</span>
+          <span class="val">${itemData.size || 'Free Size'}</span>
         </div>
       </div>
 
@@ -185,7 +200,7 @@ function renderItemPage() {
           </div>
         `}
 
-        <h3><ion-icon name="calendar-outline"></ion-icon> Select Rental Dates</h3>
+        <h3><ion-icon name="calendar-outline"></ion-icon> Select Rental Dates (1 to 5 Days)</h3>
         <form id="bookingForm">
           <div class="date-picker-grid">
             <div class="date-input-group">
@@ -193,8 +208,8 @@ function renderItemPage() {
               <input type="date" id="startDate" min="${todayStr}" value="${todayStr}" required>
             </div>
             <div class="date-input-group">
-              <label for="endDate">Rental Return Date</label>
-              <input type="date" id="endDate" min="${todayStr}" value="${tomorrowStr}" required>
+              <label for="endDate">Rental Return Date (Max 5 Days)</label>
+              <input type="date" id="endDate" min="${todayStr}" max="${maxDate5Str}" value="${todayStr}" required>
             </div>
           </div>
 
@@ -202,10 +217,24 @@ function renderItemPage() {
 
           <!-- Modern Delivery Address & Contact Section -->
           <div class="delivery-address-section" style="margin-top: 22px; padding-top: 18px; border-top: 1px solid #e2e8f0;">
-            <h4 style="font-size: 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: #0f172a; font-weight: 700;">
-              <ion-icon name="location-outline" style="color: #0284c7; font-size: 22px;"></ion-icon>
-              Delivery Address & Contact Details
-            </h4>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+              <h4 style="font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px; color: #0f172a; font-weight: 700;">
+                <ion-icon name="location-outline" style="color: #0284c7; font-size: 22px;"></ion-icon>
+                Delivery Address & Contact Details
+              </h4>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" id="detectCustomerGpsBtn" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                  <ion-icon name="locate"></ion-icon> <span>📍 Use GPS</span>
+                </button>
+                <button type="button" id="pickCustomerOnMapBtn" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                  <span>🗺️ Select on Map</span>
+                </button>
+              </div>
+            </div>
+
+            <div id="customerGpsStatus" style="font-size: 12px; margin-bottom: 10px; color: #15803d; display: none; background: #f0fdf4; padding: 6px 10px; border-radius: 6px; border: 1px solid #bbf7d0;"></div>
+            <input type="hidden" id="deliveryLat" value="">
+            <input type="hidden" id="deliveryLng" value="">
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
               <div>
@@ -291,10 +320,20 @@ function renderItemPage() {
   const endDateInput = document.getElementById("endDate");
 
   startDateInput.addEventListener("change", () => {
+    if (!startDateInput.value) return;
+    const sDate = new Date(startDateInput.value);
+    const maxDate = new Date(sDate);
+    maxDate.setDate(maxDate.getDate() + 4); // 5 calendar days total
+    const maxStr = maxDate.toISOString().split("T")[0];
+
+    endDateInput.min = startDateInput.value;
+    endDateInput.max = maxStr;
+
     if (endDateInput.value < startDateInput.value) {
       endDateInput.value = startDateInput.value;
+    } else if (endDateInput.value > maxStr) {
+      endDateInput.value = maxStr;
     }
-    endDateInput.min = startDateInput.value;
     recalculatePriceAndAvailability();
   });
 
@@ -306,6 +345,99 @@ function renderItemPage() {
   // Attach Booking Form Submission
   const bookingForm = document.getElementById("bookingForm");
   bookingForm.addEventListener("submit", handleBookingSubmit);
+
+  // Attach Customer GPS Detection Button
+  const detectGpsBtn = document.getElementById("detectCustomerGpsBtn");
+  const gpsStatus = document.getElementById("customerGpsStatus");
+  const delAddress = document.getElementById("deliveryAddress");
+  const delCity = document.getElementById("deliveryCity");
+  const delPincode = document.getElementById("deliveryPincode");
+  const delLat = document.getElementById("deliveryLat");
+  const delLng = document.getElementById("deliveryLng");
+
+  if (detectGpsBtn) {
+    detectGpsBtn.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.");
+        return;
+      }
+      detectGpsBtn.disabled = true;
+      detectGpsBtn.innerHTML = `<ion-icon name="sync-outline" class="spin-icon"></ion-icon> <span>Detecting GPS...</span>`;
+      gpsStatus.style.display = "block";
+      gpsStatus.style.color = "#0369a1";
+      gpsStatus.textContent = "Connecting to satellite GPS for precise doorstep pinpoint...";
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          delLat.value = lat;
+          delLng.value = lng;
+          gpsStatus.textContent = `📍 GPS Acquired (${lat.toFixed(5)}, ${lng.toFixed(5)}). Fetching address...`;
+
+          try {
+            const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            if (resp.ok) {
+              const data = await resp.json();
+              if (data && data.address) {
+                const road = data.address.road || data.address.suburb || data.address.neighbourhood || '';
+                const locality = data.address.city || data.address.town || data.address.village || data.address.county || '';
+                const postcode = data.address.postcode || '';
+
+                if (road && !delAddress.value) {
+                  delAddress.value = `${road}${locality ? ', ' + locality : ''}`;
+                }
+                if (locality) delCity.value = locality;
+                if (postcode) delPincode.value = postcode;
+              }
+            }
+          } catch (err) {
+            console.warn("Reverse geocode warning:", err);
+          }
+
+          gpsStatus.style.color = "#15803d";
+          gpsStatus.textContent = `✅ Exact GPS Doorstep Location Pinned (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+          detectGpsBtn.disabled = false;
+          detectGpsBtn.innerHTML = `<ion-icon name="checkmark-circle"></ion-icon> <span>GPS Pinned!</span>`;
+        },
+        (err) => {
+          console.warn("GPS error:", err);
+          gpsStatus.style.color = "#dc2626";
+          gpsStatus.textContent = "Could not fetch GPS automatically. Please enter your address manually.";
+          detectGpsBtn.disabled = false;
+          detectGpsBtn.innerHTML = `<ion-icon name="locate"></ion-icon> <span>📍 Retry GPS</span>`;
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  }
+
+  // Attach Customer Interactive Map Picker
+  const pickCustomerOnMapBtn = document.getElementById("pickCustomerOnMapBtn");
+  if (pickCustomerOnMapBtn) {
+    pickCustomerOnMapBtn.addEventListener("click", () => {
+      openMapPicker({
+        initialLat: delLat.value ? parseFloat(delLat.value) : null,
+        initialLng: delLng.value ? parseFloat(delLng.value) : null,
+        onConfirm: (loc) => {
+          if (delAddress) delAddress.value = loc.address;
+          if (delCity && loc.city) delCity.value = loc.city;
+          if (delPincode && loc.pincode) delPincode.value = loc.pincode;
+          if (delLat) delLat.value = loc.lat;
+          if (delLng) delLng.value = loc.lng;
+
+          if (gpsStatus) {
+            gpsStatus.style.display = "block";
+            gpsStatus.style.color = "#15803d";
+            gpsStatus.textContent = `📍 Doorstep location pinned on map: ${loc.address} (${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)})`;
+          }
+        }
+      });
+    });
+  }
+
+  // Initialize In-App Notification Center
+  initNotificationCenter();
 }
 
 // Recalculate price math and check availability overlap
@@ -330,6 +462,13 @@ function recalculatePriceAndAvailability() {
   // Calculate rental days
   const diffTime = Math.abs(end - start);
   const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+  if (days > 5) {
+    noticeEl.className = "availability-notice error";
+    noticeEl.innerHTML = "⚠️ Maximum rental duration is 5 days (1 to 5 days allowed).";
+    bookNowBtn.disabled = true;
+    return;
+  }
 
   // Price calculations
   const pricePerDay = Number(itemData.pricePerDay) || 0;
@@ -388,6 +527,8 @@ async function handleBookingSubmit(e) {
   const deliveryCity = document.getElementById("deliveryCity").value.trim();
   const deliveryPincode = document.getElementById("deliveryPincode").value.trim();
   const deliveryNotes = document.getElementById("deliveryNotes").value.trim();
+  const deliveryLat = document.getElementById("deliveryLat") ? document.getElementById("deliveryLat").value : "";
+  const deliveryLng = document.getElementById("deliveryLng") ? document.getElementById("deliveryLng").value : "";
 
   if (!renterName || !renterPhone || !deliveryAddress || !deliveryCity || !deliveryPincode) {
     alert("⚠️ Please fill in complete delivery address and contact details!");
@@ -404,6 +545,13 @@ async function handleBookingSubmit(e) {
     const end = new Date(endDateStr);
     const days = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
 
+    if (days < 1 || days > 5) {
+      alert("⚠️ Maximum rental duration is 5 days (1 to 5 days allowed). Please select dates within 5 days.");
+      msgEl.textContent = "";
+      bookNowBtn.disabled = false;
+      return;
+    }
+
     const pricePerDay = Number(itemData.pricePerDay);
     const securityDeposit = Number(itemData.securityDeposit);
     const rentalAmount = days * pricePerDay;
@@ -418,12 +566,15 @@ async function handleBookingSubmit(e) {
       itemCategory: itemData.category || 'Outfit',
       itemSize: itemData.size || 'Free Size',
       
-      // Owner Details
+      // Owner Details & Pickup Location
       ownerId: itemData.ownerId || 'Anonymous',
       ownerName: itemData.ownerName || 'Outfit Owner',
       ownerPhone: itemData.ownerPhone || '',
       ownerEmail: itemData.ownerEmail || '',
       ownerCity: itemData.city || 'India',
+      ownerStreetAddress: itemData.ownerStreetAddress || '',
+      ownerLat: itemData.ownerLat || null,
+      ownerLng: itemData.ownerLng || null,
 
       // Renter Details & Delivery Address
       renterId: activeUser.uid || activeUser.email || 'customer',
@@ -434,6 +585,8 @@ async function handleBookingSubmit(e) {
       deliveryCity: deliveryCity,
       deliveryPincode: deliveryPincode,
       deliveryNotes: deliveryNotes,
+      deliveryLat: deliveryLat || null,
+      deliveryLng: deliveryLng || null,
 
       // Pricing & Dates
       startDate: startDateStr,
@@ -479,6 +632,35 @@ async function handleBookingSubmit(e) {
           status: "success",
           createdAt: serverTimestamp()
         });
+
+        // 3. Send In-App & Email Notifications
+        // A. To Renter
+        sendNotification({
+          recipientUid: activeUser.uid || "",
+          recipientEmail: activeUser.email,
+          recipientPhone: renterPhone,
+          recipientName: renterName,
+          title: "🎉 Rental Booking Confirmed!",
+          message: `Your booking for "${itemData.title}" (#${bookingDoc.id.substring(0, 8).toUpperCase()}) is confirmed. Total Paid: ₹${grandTotal}. Delivery will reach ${deliveryAddress}, ${deliveryCity}.`,
+          type: "order_update",
+          relatedId: bookingDoc.id,
+          emailSubject: `Booking Confirmed: ${itemData.title}`
+        });
+
+        // B. To Owner
+        if (itemData.ownerEmail || itemData.ownerPhone || itemData.ownerId) {
+          sendNotification({
+            recipientUid: itemData.ownerId || "",
+            recipientEmail: itemData.ownerEmail,
+            recipientPhone: itemData.ownerPhone,
+            recipientName: itemData.ownerName,
+            title: "👗 New Rental Order for Your Outfit!",
+            message: `Your outfit "${itemData.title}" has been booked by ${renterName} from ${startDateStr} to ${endDateStr}. Delivery rider will pick it up soon.`,
+            type: "order_update",
+            relatedId: bookingDoc.id,
+            emailSubject: `New Rental Order: ${itemData.title}`
+          });
+        }
 
         // Render Confirmation Receipt UI
         renderConfirmationReceipt({

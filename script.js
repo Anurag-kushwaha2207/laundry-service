@@ -581,6 +581,7 @@ function updateNavbarUser(name) {
   }
 
   setupRealtimeAdminListener();
+  window.dispatchEvent(new Event("userSessionChanged"));
 }
 
 function logoutUser() {
@@ -592,6 +593,7 @@ function logoutUser() {
   currentUser = null;
   localStorage.removeItem("laundry_current_user");
   updateNavbarUser("Username");
+  window.dispatchEvent(new Event("userSessionChanged"));
 
   const adminNavLink = document.getElementById("adminNavLink");
   if (adminNavLink) adminNavLink.style.display = "none";

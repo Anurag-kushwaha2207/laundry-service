@@ -283,6 +283,115 @@
         grid-column: span 1;
       }
     }
+
+    /* Owner Dashboard Styles */
+    .owner-tab-btn.active {
+      background: #0284c7 !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+    .stat-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: #0f172a;
+      display: block;
+      margin-top: 4px;
+    }
+    .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .owner-item-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .owner-item-header {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .owner-item-img {
+      width: 80px;
+      height: 95px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid #e2e8f0;
+    }
+    .owner-item-details {
+      flex: 1;
+      min-width: 220px;
+    }
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+    .badge-approved { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-pending { background: #fef9c3; color: #a16207; border: 1px solid #fef08a; }
+    .badge-rejected { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .rejection-banner {
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #9f1239;
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .booking-tracking-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .finance-badge-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .finance-badge {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body class="list-page-body">
@@ -312,9 +421,23 @@
     <p>Turn your designer, wedding, and festive outfits into passive income — instant live on marketplace!</p>
   </section>
 
-  <!-- Main Form Card -->
-  <div class="list-wrapper">
-    <div class="list-card">
+  <!-- Main Wrapper -->
+  <div class="list-wrapper" style="max-width: 960px;">
+
+    <!-- Top Mode Switcher Tabs -->
+    <div class="owner-tabs" style="display: flex; gap: 10px; margin-bottom: 22px; background: #ffffff; padding: 8px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06);">
+      <button type="button" id="tabListNewBtn" class="owner-tab-btn active" style="flex: 1; padding: 12px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #0284c7; color: #ffffff; transition: all 0.2s;">
+        <ion-icon name="add-circle-outline" style="font-size: 20px;"></ion-icon>
+        <span>➕ List New Clothes</span>
+      </button>
+      <button type="button" id="tabMyListingsBtn" class="owner-tab-btn" style="flex: 1; padding: 12px 18px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: transparent; color: #475569; transition: all 0.2s;">
+        <ion-icon name="shirt-outline" style="font-size: 20px;"></ion-icon>
+        <span>👗 My Listed Clothes & Earnings (<span id="myListingsBadge">0</span>)</span>
+      </button>
+    </div>
+
+    <!-- View 1: Main Form Card -->
+    <div id="listFormCard" class="list-card">
 
       <!-- Active User Identification Banner (Clean without Switch button) -->
       <div id="authBanner" class="auth-banner not-logged">
@@ -395,6 +518,27 @@
             <input type="text" id="city" required placeholder="e.g. Etawah, Kanpur, Delhi, Lucknow">
           </div>
 
+          <!-- Pickup Street Address & Map Location Picker -->
+          <div class="form-group full-width" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+              <label for="ownerStreetAddress" style="margin: 0; font-size: 13.5px; font-weight: 700; color: #0f172a;">
+                <ion-icon name="pin-outline" style="color: #0284c7; font-size: 18px;"></ion-icon> Exact Pickup Address (For Delivery Boy) *
+              </label>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" id="pickOwnerOnMapBtn" style="background: #0284c7; color: #ffffff; border: none; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);">
+                  <ion-icon name="map"></ion-icon> <span>🗺️ Select on Map</span>
+                </button>
+                <button type="button" id="detectOwnerGpsBtn" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                  <ion-icon name="locate"></ion-icon> <span>📍 Detect GPS</span>
+                </button>
+              </div>
+            </div>
+            <textarea id="ownerStreetAddress" required rows="2" placeholder="e.g. House #14, Lane 2, Shiv Colony, Lakhna Road, Near Shiv Temple" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; font-family: inherit; box-sizing: border-box;"></textarea>
+            <input type="hidden" id="ownerLat" value="">
+            <input type="hidden" id="ownerLng" value="">
+            <div id="ownerGpsStatus" style="font-size: 12px; margin-top: 5px; color: #15803d; display: none; background: #f0fdf4; padding: 6px 10px; border-radius: 6px; border: 1px solid #bbf7d0;"></div>
+          </div>
+
           <!-- Price Per Day -->
           <div class="form-group">
             <label for="pricePerDay">
@@ -456,8 +600,130 @@
       <div id="statusMsgBox" class="status-msg-box"></div>
 
     </div>
+
+    <!-- View 2: My Listed Clothes & Earnings Dashboard Card -->
+    <div id="myListingsCard" class="list-card" style="display: none; padding: 26px;">
+      
+      <!-- Owner Session Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="margin: 0; font-size: 20px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+            <ion-icon name="wallet-outline" style="color: #0284c7;"></ion-icon> My Clothes & Earnings Dashboard
+          </h2>
+          <p style="margin: 4px 0 0; font-size: 13.5px; color: #64748b;">
+            Track your outfits, live customer rentals, earnings payouts, and security deposit returns.
+          </p>
+        </div>
+        <button type="button" id="refreshMyListingsBtn" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <ion-icon name="sync-outline"></ion-icon> Refresh
+        </button>
+      </div>
+
+      <!-- Stats Summary Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Total Listed</span>
+          <span id="statTotalListed" class="stat-val">0</span>
+        </div>
+        <div class="stat-card" style="border-color: #bbf7d0; background: #f0fdf4;">
+          <span class="stat-label" style="color: #166534;">Active & Approved</span>
+          <span id="statApproved" class="stat-val" style="color: #15803d;">0</span>
+        </div>
+        <div class="stat-card" style="border-color: #fef08a; background: #fefce8;">
+          <span class="stat-label" style="color: #854d0e;">Pending Approval</span>
+          <span id="statPending" class="stat-val" style="color: #a16207;">0</span>
+        </div>
+        <div class="stat-card" style="border-color: #bae6fd; background: #f0f9ff;">
+          <span class="stat-label" style="color: #0369a1;">Bookings Received</span>
+          <span id="statTotalBookings" class="stat-val" style="color: #0284c7;">0</span>
+        </div>
+        <div class="stat-card" style="border-color: #ddd6fe; background: #f5f3ff;">
+          <span class="stat-label" style="color: #6d28d9;">Total Rent Earned</span>
+          <span id="statTotalPayout" class="stat-val" style="color: #7c3aed;">₹0</span>
+        </div>
+      </div>
+
+      <!-- Filter Buttons -->
+      <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+        <button class="owner-filter-btn active" data-filter="all" style="padding: 7px 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: #0284c7; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;">All Clothes</button>
+        <button class="owner-filter-btn" data-filter="approved" style="padding: 7px 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-size: 13px; font-weight: 600; cursor: pointer;">Approved & Live</button>
+        <button class="owner-filter-btn" data-filter="pending" style="padding: 7px 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-size: 13px; font-weight: 600; cursor: pointer;">Pending Approval</button>
+        <button class="owner-filter-btn" data-filter="rejected" style="padding: 7px 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-size: 13px; font-weight: 600; cursor: pointer;">Rejected by Admin</button>
+        <button class="owner-filter-btn" data-filter="booked" style="padding: 7px 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-size: 13px; font-weight: 600; cursor: pointer;">Currently Booked</button>
+      </div>
+
+      <!-- Outfits & Bookings List Container -->
+      <div id="ownerItemsList">
+        <div style="text-align: center; padding: 40px; color: #64748b;">
+          <ion-icon name="sync-outline" class="spin-icon" style="font-size: 28px;"></ion-icon>
+          <p>Loading your listed clothes...</p>
+        </div>
+      </div>
+
+      <!-- My Complaints / Tickets Section -->
+      <div style="margin-top: 35px; padding-top: 25px; border-top: 2px dashed #e2e8f0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h3 style="margin: 0; font-size: 17px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+            <ion-icon name="chatbubbles-outline" style="color: #dc2626;"></ion-icon>
+            My Complaints & Disputes with Admin
+          </h3>
+          <span id="complaintsCountBadge" style="background: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;">0 Tickets</span>
+        </div>
+        <div id="ownerComplaintsList">
+          <p style="color: #94a3b8; font-size: 13.5px;">No complaints filed yet. You can raise a complaint on any item or rental booking above.</p>
+        </div>
+      </div>
+
+    </div>
   </div>
 
-  <script type="module" src="../js/rental.js"></script>
+  <!-- Raise Complaint / Dispute Modal -->
+  <div id="complaintModal" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); z-index: 999999; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #ffffff; max-width: 500px; width: 100%; border-radius: 14px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 17px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+          <ion-icon name="alert-circle" style="color: #dc2626; font-size: 22px;"></ion-icon> Raise Issue / Dispute to Admin
+        </h3>
+        <button type="button" id="closeComplaintModalBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+      </div>
+
+      <form id="complaintForm">
+        <input type="hidden" id="complaintItemId" value="">
+        <input type="hidden" id="complaintBookingId" value="">
+
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 12.5px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Related Outfit / Order</label>
+          <input type="text" id="complaintItemTitle" readonly style="width: 100%; padding: 10px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 12.5px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Issue Category *</label>
+          <select id="complaintCategory" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; box-sizing: border-box;">
+            <option value="">-- Select Issue Type --</option>
+            <option value="Damaged Outfit">Damaged Outfit (Stain, Tear, Missing parts)</option>
+            <option value="Payout Delay">Rental Earnings Payout Delay</option>
+            <option value="Deposit Issue">Security Deposit Discrepancy</option>
+            <option value="Pickup/Delivery Delay">Rider Pickup or Return Delayed</option>
+            <option value="Rejection Dispute">Listing Rejection Dispute</option>
+            <option value="Other">Other Dispute</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 12.5px; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Detailed Complaint / Description *</label>
+          <textarea id="complaintDescription" required rows="4" placeholder="Explain clearly what happened so admin can review and take immediate action..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-family: inherit; box-sizing: border-box; resize: vertical;"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" id="cancelComplaintBtn" style="background: #f1f5f9; color: #475569; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+          <button type="submit" id="submitComplaintBtn" style="background: #dc2626; color: #ffffff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <ion-icon name="send"></ion-icon> Submit Complaint
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="../js/rental.js?v=20260905_6"></script>
 </body>
 </html>
