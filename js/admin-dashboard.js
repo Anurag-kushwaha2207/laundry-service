@@ -5,6 +5,7 @@ import {
   doc, 
   getDoc,
   updateDoc, 
+  deleteDoc,
   addDoc, 
   query, 
   orderBy,
@@ -128,13 +129,17 @@ function renderCurrentTab() {
 
   itemsListEl.innerHTML = filtered.map(item => createItemCard(item)).join("");
 
-  // Attach event listeners to Approve/Reject buttons
+  // Attach event listeners to Approve/Reject/Delete buttons
   document.querySelectorAll(".approve-btn").forEach(btn => {
     btn.addEventListener("click", () => handleStatusChange(btn.dataset.id, "approved"));
   });
 
   document.querySelectorAll(".reject-btn").forEach(btn => {
     btn.addEventListener("click", () => handleStatusChange(btn.dataset.id, "rejected"));
+  });
+
+  document.querySelectorAll(".delete-item-btn").forEach(btn => {
+    btn.addEventListener("click", () => handleDeleteItem(btn.dataset.id));
   });
 }
 
@@ -146,7 +151,7 @@ function createItemCard(item) {
 
   let statusBadge = "";
   if (status === "pending") statusBadge = `<span class="status-badge badge-pending">⏳ Pending Review</span>`;
-  else if (status === "approved") statusBadge = `<span class="status-badge badge-approved">✅ Approved</span>`;
+  else if (status === "approved") statusBadge = `<span class="status-badge badge-approved">✅ Live / Approved</span>`;
   else if (status === "rejected") statusBadge = `<span class="status-badge badge-rejected">❌ Rejected</span>`;
 
   return `
@@ -166,27 +171,45 @@ function createItemCard(item) {
           <p><strong>Category:</strong> <span class="cap">${item.category || 'N/A'}</span></p>
           <p><strong>Size:</strong> ${item.size || 'N/A'}</p>
           <p><strong>Condition:</strong> ${item.condition || 'Good'}</p>
-          <p><strong>Price / Day:</strong> ₹${item.pricePerDay || 0}</p>
-          <p><strong>Security Deposit:</strong> ₹${item.securityDeposit || 0}</p>
-          <p class="owner-id"><strong>Owner ID:</strong> <code>${item.ownerId || 'Anonymous'}</code></p>
+          <p><strong>Rent / Day:</strong> ₹${item.pricePerDay || 0}</p>
+          <p><strong>Deposit:</strong> ₹${item.securityDeposit || 0}</p>
+          <p><strong>City / Location:</strong> ${item.city || 'India'}</p>
+          <p><strong>Owner:</strong> ${item.ownerName || 'Valued User'} (${item.ownerPhone || item.ownerEmail || 'N/A'})</p>
         </div>
 
-        <div class="admin-card-actions">
+        <div class="admin-card-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
           ${status !== 'approved' ? `
-            <button class="action-btn approve-btn" data-id="${item.id}">
-              <ion-icon name="checkmark-sharp"></ion-icon> Approve
+            <button class="action-btn approve-btn" data-id="${item.id}" style="background: #15803d; color: #fff;">
+              <ion-icon name="checkmark-sharp"></ion-icon> Approve (लाइव करें)
             </button>
-          ` : ''}
+          ` : `
+            <button class="action-btn reject-btn" data-id="${item.id}" style="background: #eab308; color: #000;">
+              <ion-icon name="eye-off-outline"></ion-icon> Unpublish
+            </button>
+          `}
 
-          ${status !== 'rejected' ? `
-            <button class="action-btn reject-btn" data-id="${item.id}">
-              <ion-icon name="close-sharp"></ion-icon> Reject
-            </button>
-          ` : ''}
+          <button class="action-btn delete-item-btn" data-id="${item.id}" style="background: #dc2626; color: #fff; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 600;">
+            <ion-icon name="trash-outline"></ion-icon> Delete
+          </button>
         </div>
       </div>
     </div>
   `;
+}
+
+// Handle Delete action
+async function handleDeleteItem(itemId) {
+  if (!confirm("क्या आप वाकई इस आइटम को मार्केटप्लेस और डेटाबेस से हमेशा के लिए डिलीट करना चाहते हैं?")) {
+    return;
+  }
+
+  try {
+    await deleteDoc(doc(db, "rental_items", itemId));
+    alert("✅ आइटम सफलतापूर्वक डिलीट कर दिया गया!");
+  } catch (error) {
+    console.error("Delete error:", error);
+    alert("❌ डिलीट करने में समस्या आई: " + error.message);
+  }
 }
 
 // Handle Approve / Reject action

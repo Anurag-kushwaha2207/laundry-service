@@ -1,61 +1,442 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-<meta charset="UTF-8">
-<title>List Your Item for Rent</title>
-<link rel="stylesheet" href="../style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>List Your Clothes for Rent - Laundry & Rental Marketplace</title>
+  <link rel="stylesheet" href="../style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <style>
+    .list-page-body {
+      background: #f1f5f9;
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #1e293b;
+    }
+    .list-header {
+      background: #ffffff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .list-header-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .list-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: #0284c7;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .list-brand ion-icon {
+      font-size: 28px;
+    }
+    .list-nav {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .list-nav a {
+      text-decoration: none;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .list-nav a:hover, .list-nav a.active {
+      color: #0284c7;
+      background: #e0f2fe;
+    }
+    .list-hero {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #ffffff;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .list-hero h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
+      font-weight: 700;
+    }
+    .list-hero p {
+      margin: 0;
+      font-size: 16px;
+      opacity: 0.95;
+    }
+    .list-wrapper {
+      max-width: 800px;
+      margin: -30px auto 50px;
+      padding: 0 20px;
+    }
+    .list-card {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      padding: 35px 30px;
+    }
+    .auth-banner {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+    .auth-banner.logged-in {
+      background: #f0fdf4;
+      border-color: #86efac;
+      color: #15803d;
+    }
+    .auth-banner.not-logged {
+      background: #fffbeb;
+      border-color: #fde68a;
+      color: #b45309;
+    }
+    .auth-login-btn {
+      background: #0284c7;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 18px;
+    }
+    .form-group.full-width {
+      grid-column: span 2;
+    }
+    .form-group label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      padding: 12px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      color: #1e293b;
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: #0284c7;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+    .image-upload-box {
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .image-upload-box:hover {
+      border-color: #0284c7;
+      background: #f0f9ff;
+    }
+    .image-upload-box ion-icon {
+      font-size: 40px;
+      color: #0284c7;
+      margin-bottom: 8px;
+    }
+    .image-previews-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 15px;
+    }
+    .preview-thumb {
+      width: 90px;
+      height: 90px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .consent-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 20px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .consent-card input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 3px;
+      cursor: pointer;
+    }
+    .consent-card label {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.5;
+      cursor: pointer;
+    }
+    .submit-list-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #ffffff;
+      padding: 16px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+      transition: all 0.2s;
+    }
+    .submit-list-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4);
+    }
+    .submit-list-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .status-msg-box {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      display: none;
+      text-align: center;
+    }
+    .status-msg-box.success {
+      display: block;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      color: #15803d;
+    }
+    .status-msg-box.error {
+      display: block;
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #b91c1c;
+    }
+    .view-market-btn {
+      display: inline-block;
+      margin-top: 12px;
+      background: #15803d;
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    @media (max-width: 650px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-group.full-width {
+        grid-column: span 1;
+      }
+    }
+  </style>
 </head>
-<body>
+<body class="list-page-body">
 
-<div class="rental-form-container">
-  <h2>👗 अपना Item Rent पर List करें</h2>
-  <form id="listItemForm">
+  <!-- Header Navigation -->
+  <header class="list-header">
+    <div class="list-header-container">
+      <a href="../index.html" class="list-brand">
+        <ion-icon name="shirt-outline"></ion-icon>
+        <span>Laundry & Rentals</span>
+      </a>
 
-    <label>Item Title</label>
-    <input type="text" id="title" required placeholder="e.g. Red Bridal Lehenga">
-
-    <label>Category</label>
-    <select id="category" required>
-      <option value="">-- Select --</option>
-      <option value="saree">Saree</option>
-      <option value="lehenga">Lehenga</option>
-      <option value="suit">Suit</option>
-      <option value="sherwani">Sherwani</option>
-      <option value="other">Other</option>
-    </select>
-
-    <label>Size</label>
-    <input type="text" id="size" required placeholder="e.g. M, L, Free Size">
-
-    <label>Condition</label>
-    <select id="condition" required>
-      <option value="new">New</option>
-      <option value="like-new">Like New</option>
-      <option value="good">Good</option>
-    </select>
-
-    <label>Price per day (₹)</label>
-    <input type="number" id="pricePerDay" required min="1">
-
-    <label>Security Deposit (₹)</label>
-    <input type="number" id="securityDeposit" required min="1">
-
-    <label>Upload Photos (minimum 3)</label>
-    <input type="file" id="itemPhotos" accept="image/*" multiple required>
-
-    <div class="consent-box">
-      <input type="checkbox" id="consentCheck" required>
-      <label for="consentCheck">
-        मैं सहमत हूं कि यह item rent पर देने से पहले और हर वापसी के बाद
-        professionally clean किया जाएगा, और मैं इसकी ownership की पुष्टि करता हूं।
-      </label>
+      <nav class="list-nav">
+        <a href="../index.html">🏠 Home</a>
+        <a href="browse.html">👗 Rent Clothes</a>
+        <a href="list-item.html" class="active">➕ List For Rent</a>
+        <a href="../admin/dashboard.html">🛡️ Admin</a>
+      </nav>
     </div>
+  </header>
 
-    <button type="submit" id="submitBtn">Submit for Review</button>
-  </form>
-  <p id="statusMsg"></p>
-</div>
+  <!-- Hero Section -->
+  <section class="list-hero">
+    <h1>👗 अपने कपड़े Rent पर दें और कमाई करें</h1>
+    <p>List your designer & ethnic clothes for rent — instant live on marketplace!</p>
+  </section>
 
-<script type="module" src="../js/rental.js"></script>
+  <!-- Main Form Card -->
+  <div class="list-wrapper">
+    <div class="list-card">
+
+      <!-- Active User Identification Banner -->
+      <div id="authBanner" class="auth-banner not-logged">
+        <span id="authBannerText">⚠️ चेकिंग लॉगिन स्थिति...</span>
+        <a href="../index.html" id="authActionBtn" class="auth-login-btn">Log In Here</a>
+      </div>
+
+      <form id="listItemForm">
+        <div class="form-grid">
+
+          <!-- Title -->
+          <div class="form-group full-width">
+            <label for="title">
+              <ion-icon name="pricetag-outline"></ion-icon> कपड़ों का नाम / Outfit Title *
+            </label>
+            <input type="text" id="title" required placeholder="उदा: Red Bridal Velvet Lehenga, Banarasi Silk Saree">
+          </div>
+
+          <!-- Category -->
+          <div class="form-group">
+            <label for="category">
+              <ion-icon name="grid-outline"></ion-icon> कपड़ों की श्रेणी / Category *
+            </label>
+            <select id="category" required>
+              <option value="">-- श्रेणी चुनें (Select) --</option>
+              <option value="saree">साड़ी (Saree)</option>
+              <option value="lehenga">लहंगा (Lehenga)</option>
+              <option value="sherwani">शेरवानी (Sherwani)</option>
+              <option value="suit">सूट (Suit / Anarkali)</option>
+              <option value="gown">गाउन (Indo-Western / Gown)</option>
+              <option value="kurta">कुर्ता (Kurta Pajama)</option>
+              <option value="other">अन्य (Other Ethnic Wear)</option>
+            </select>
+          </div>
+
+          <!-- Size -->
+          <div class="form-group">
+            <label for="size">
+              <ion-icon name="resize-outline"></ion-icon> साइज़ / Size *
+            </label>
+            <select id="size" required>
+              <option value="">-- साइज़ चुनें --</option>
+              <option value="Free Size">Free Size (सभी के लिए उपयुक्त)</option>
+              <option value="S">S (Small)</option>
+              <option value="M">M (Medium)</option>
+              <option value="L">L (Large)</option>
+              <option value="XL">XL (Extra Large)</option>
+              <option value="XXL">XXL (Double Extra Large)</option>
+            </select>
+          </div>
+
+          <!-- Condition -->
+          <div class="form-group">
+            <label for="condition">
+              <ion-icon name="sparkles-outline"></ion-icon> कपड़ों की हालत / Condition *
+            </label>
+            <select id="condition" required>
+              <option value="Brand New">बिल्कुल नया (Brand New - Never Worn)</option>
+              <option value="Like New" selected>नया जैसा (Like New - Worn 1-2 times)</option>
+              <option value="Good">अच्छी स्थिति (Good Condition - Clean & Maintained)</option>
+            </select>
+          </div>
+
+          <!-- City / Location -->
+          <div class="form-group">
+            <label for="city">
+              <ion-icon name="location-outline"></ion-icon> आपका शहर / City *
+            </label>
+            <input type="text" id="city" required placeholder="उदा: Delhi, Mumbai, Kanpur, Lucknow">
+          </div>
+
+          <!-- Price Per Day -->
+          <div class="form-group">
+            <label for="pricePerDay">
+              <ion-icon name="cash-outline"></ion-icon> प्रतिदिन किराया / Rent Per Day (₹) *
+            </label>
+            <input type="number" id="pricePerDay" required min="1" placeholder="उदा: 300">
+          </div>
+
+          <!-- Security Deposit -->
+          <div class="form-group">
+            <label for="securityDeposit">
+              <ion-icon name="shield-checkmark-outline"></ion-icon> सुरक्षा राशि / Security Deposit (₹) *
+            </label>
+            <input type="number" id="securityDeposit" required min="0" placeholder="उदा: 500 (वापसी योग्य)">
+          </div>
+
+          <!-- Upload Photos -->
+          <div class="form-group full-width">
+            <label for="itemPhotos">
+              <ion-icon name="images-outline"></ion-icon> कपड़ों की तस्वीरें / Upload Photos (1 से 5 फ़ोटो) *
+            </label>
+            <div class="image-upload-box" onclick="document.getElementById('itemPhotos').click()">
+              <ion-icon name="cloud-upload-outline"></ion-icon>
+              <p style="margin: 0; font-weight: 600;">तस्वीरें चुनने के लिए यहाँ क्लिक करें (Click to Choose Photos)</p>
+              <span style="font-size: 13px; color: #64748b;">(JPG, PNG, WebP supported)</span>
+            </div>
+            <input type="file" id="itemPhotos" accept="image/*" multiple required style="display: none;">
+            
+            <!-- Live Previews Container -->
+            <div id="previewsContainer" class="image-previews-container"></div>
+          </div>
+
+          <!-- Owner Phone / WhatsApp -->
+          <div class="form-group full-width">
+            <label for="ownerContact">
+              <ion-icon name="call-outline"></ion-icon> संपर्क फोन / WhatsApp नंबर *
+            </label>
+            <input type="tel" id="ownerContact" required placeholder="उदा: 9837101838">
+          </div>
+
+        </div>
+
+        <!-- Consent Box -->
+        <div class="consent-card">
+          <input type="checkbox" id="consentCheck" required>
+          <label for="consentCheck">
+            मैं पुष्टि करता/करती हूँ कि यह आइटम मेरा है और यह रेंट पर देने से पहले और वापसी के बाद साफ-सुथरी स्थिति में रहेगा। मुझे इस आइटम को मार्केटप्लेस पर किराए पर देने की पूरी सहमति है।
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" id="submitBtn" class="submit-list-btn">
+          <ion-icon name="cloud-upload"></ion-icon>
+          <span>🚀 कपड़े लाइव लिस्ट करें (Publish for Rent)</span>
+        </button>
+      </form>
+
+      <!-- Feedback Status Message Box -->
+      <div id="statusMsgBox" class="status-msg-box"></div>
+
+    </div>
+  </div>
+
+  <script type="module" src="../js/rental.js"></script>
 </body>
 </html>
