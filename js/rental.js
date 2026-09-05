@@ -2,6 +2,8 @@ import { db, auth } from "./firebase-config.js";
 import { 
   collection, 
   addDoc, 
+  setDoc,
+  doc,
   getDocs, 
   query, 
   where, 
@@ -11,6 +13,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { openMapPicker } from "./map-picker.js";
 import { sendNotification } from "./notifications.js";
+import { generateItemDocId, generateComplaintDocId, getReadableDateString } from "./db-helper.js";
 
 const form = document.getElementById("listItemForm");
 const submitBtn = document.getElementById("submitBtn");
@@ -184,9 +187,9 @@ form.addEventListener("submit", async (e) => {
     const securityDeposit = Number(document.getElementById("securityDeposit").value);
     const ownerContact = document.getElementById("ownerContact").value.trim();
 
-    // Save Item to Firestore Collection 'rental_items'
-    // Status is 'approved' so it appears IMMEDIATELY in 'Rent Clothes' (browse.html) for all users!
-    const docRef = await addDoc(collection(db, "rental_items"), {
+    // Save Item to Firestore Collection 'rental_items' with clean readable ID
+    const itemDocId = generateItemDocId(category, title, activeUser.name || ownerContact);
+    const itemData = {
       ownerId: activeUser.uid || activeUser.email || "user",
       ownerName: activeUser.name || "Valued Owner",
       ownerEmail: activeUser.email || "",
@@ -205,10 +208,13 @@ form.addEventListener("submit", async (e) => {
       status: "pending", // Enters 'Pending Approval' for admin review!
       consentGiven: true,
       verifiedByAdmin: false,
+      readableDate: getReadableDateString(),
+      displaySummary: `[Pending Approval] ${title} (${category}) by ${activeUser.name || 'Owner'} - ₹${pricePerDay}/day`,
       createdAt: serverTimestamp()
-    });
+    };
+    await setDoc(doc(db, "rental_items", itemDocId), itemData);
 
-    console.log("✅ Outfit submitted for approval with ID:", docRef.id);
+    console.log("✅ Outfit submitted for approval with ID:", itemDocId);
 
     // Send In-App & Email Notification to Owner
     sendNotification({
@@ -741,7 +747,8 @@ if (complaintForm) {
     const description = complaintDescription.value.trim();
 
     try {
-      const compRef = await addDoc(collection(db, "rental_complaints"), {
+      const compDocId = generateComplaintDocId(category, itemTitle, activeUser.name || "Owner");
+      const compData = {
         itemId: itemId,
         bookingId: bookingId,
         itemTitle: itemTitle,
@@ -754,10 +761,13 @@ if (complaintForm) {
         complainantRole: "owner",
         status: "open",
         adminReply: "",
+        readableDate: getReadableDateString(),
+        displaySummary: `[Open] Complaint on ${itemTitle} (${category}) by ${activeUser.name || 'Owner'}: "${description}"`,
         createdAt: serverTimestamp()
-      });
+      };
+      await setDoc(doc(db, "rental_complaints", compDocId), compData);
 
-      console.log("✅ Complaint submitted with ID:", compRef.id);
+      console.log("✅ Complaint submitted with ID:", compDocId);
 
       // In-app & Email Notification to Owner
       sendNotification({

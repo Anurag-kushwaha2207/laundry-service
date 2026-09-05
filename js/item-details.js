@@ -4,6 +4,7 @@ import {
   getDoc, 
   collection, 
   addDoc, 
+  setDoc,
   updateDoc, 
   query, 
   where, 
@@ -13,6 +14,7 @@ import {
 import { openRazorpayCheckout } from "./razorpay-config.js";
 import { sendNotification, initNotificationCenter } from "./notifications.js";
 import { openMapPicker } from "./map-picker.js";
+import { generateBookingDocId, generatePaymentDocId, getReadableDateString } from "./db-helper.js";
 
 const wrapper = document.getElementById("itemDetailsWrapper");
 
@@ -558,8 +560,9 @@ async function handleBookingSubmit(e) {
     const serviceFee = Math.round(rentalAmount * 0.10);
     const grandTotal = rentalAmount + securityDeposit + serviceFee;
 
-    // 1. Create record in Firestore rental_bookings collection
-    const bookingDoc = await addDoc(collection(db, "rental_bookings"), {
+    // 1. Create record in Firestore rental_bookings collection with structured readable ID
+    const bookingDocId = generateBookingDocId(itemData.title, renterName);
+    const bookingData = {
       itemId: itemData.id,
       itemTitle: itemData.title || 'Rental Outfit',
       itemImage: (itemData.images && itemData.images.length > 0) ? itemData.images[0] : '',
@@ -598,38 +601,49 @@ async function handleBookingSubmit(e) {
       serviceFee: serviceFee,
       grandTotal: grandTotal,
 
+      readableGrandTotal: `₹${grandTotal}`,
+      readableDate: getReadableDateString(),
+      displaySummary: `Booking for ${itemData.title || 'Outfit'} by ${renterName} (${days} days: ${startDateStr} to ${endDateStr}) - Total: ₹${grandTotal}`,
+
       status: "pending_payment",
       createdAt: serverTimestamp()
-    });
+    };
+
+    await setDoc(doc(db, "rental_bookings", bookingDocId), bookingData);
 
     msgEl.textContent = "Opening Razorpay secure payment gateway...";
 
     // 2. Open Razorpay Modal
     openRazorpayCheckout({
       amount: grandTotal,
-      bookingId: bookingDoc.id,
+      bookingId: bookingDocId,
       itemTitle: itemData.title,
       userEmail: activeUser.email,
       userPhone: renterPhone,
       onSuccess: async (payResponse) => {
         // Update booking status in Firestore to confirmed
-        const bookingRef = doc(db, "rental_bookings", bookingDoc.id);
+        const bookingRef = doc(db, "rental_bookings", bookingDocId);
         await updateDoc(bookingRef, {
           status: "confirmed",
           paymentId: payResponse.razorpay_payment_id,
           paidAt: serverTimestamp()
         });
 
-        // Add transaction log to payments collection
-        await addDoc(collection(db, "payments"), {
-          bookingId: bookingDoc.id,
+        // Add transaction log to payments collection with structured readable ID
+        const paymentDocId = generatePaymentDocId(payResponse.razorpay_payment_id, grandTotal, renterName);
+        await setDoc(doc(db, "payments", paymentDocId), {
+          bookingId: bookingDocId,
           itemId: itemData.id,
+          itemTitle: itemData.title || 'Outfit',
           renterId: activeUser.uid || activeUser.email || 'customer',
           renterName: renterName,
           amount: grandTotal,
+          readableAmount: `₹${grandTotal}`,
           paymentId: payResponse.razorpay_payment_id,
           razorpayOrderId: payResponse.razorpay_order_id || '',
           status: "success",
+          readableDate: getReadableDateString(),
+          displaySummary: `Payment of ₹${grandTotal} received from ${renterName} for ${itemData.title || 'Outfit'} via Razorpay (${payResponse.razorpay_payment_id})`,
           createdAt: serverTimestamp()
         });
 

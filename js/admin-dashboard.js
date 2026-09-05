@@ -7,11 +7,13 @@ import {
   updateDoc, 
   deleteDoc,
   addDoc, 
+  setDoc,
   query, 
   orderBy,
   serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { sendNotification } from "./notifications.js";
+import { generateLogDocId, getReadableDateString } from "./db-helper.js";
 
 const itemsListEl = document.getElementById("adminItemsList");
 const pendingCountEl = document.getElementById("pendingCount");
@@ -1000,11 +1002,34 @@ async function handleAdvanceTrackingStage(bookingId, nextStage, itemTitle) {
       lastUpdated: serverTimestamp()
     });
 
-    // Log to pickup_delivery_logs
-    await addDoc(collection(db, "pickup_delivery_logs"), {
+    const b = activeBookings.find(x => x.id === bookingId) || {};
+
+    // Friendly milestone mappings and rich metadata
+    const stageTitles = {
+      "picked_up_from_owner": { step: 1, title: "Stage 1: Picked Up from Owner", summary: "Outfit collected from owner and in transit to laundry hub" },
+      "cleaning_in_progress": { step: 2, title: "Stage 2: Cleaning & Sanitization", summary: "Outfit undergoing professional laundry & sanitization at hub" },
+      "delivered_to_renter": { step: 3, title: "Stage 3: Delivered to Renter", summary: "Outfit delivered cleanly to customer doorstep" },
+      "picked_up_from_renter": { step: 4, title: "Stage 4: Return Picked from Renter", summary: "Outfit collected back from customer after rental period" },
+      "returned_to_owner": { step: 5, title: "Stage 5: Returned to Owner", summary: "Order complete. Outfit inspected and returned to owner" }
+    };
+    const meta = stageTitles[nextStage] || { step: 1, title: nextStage, summary: "Status update" };
+    const logDocId = generateLogDocId(bookingId, nextStage, meta.step);
+
+    // Log to pickup_delivery_logs with structured readable ID and rich fields
+    await setDoc(doc(db, "pickup_delivery_logs", logDocId), {
       bookingId: bookingId,
+      bookingShortId: bookingId.substring(0, 8),
       stage: nextStage,
+      stageNumber: meta.step,
+      stageTitle: meta.title,
+      summary: meta.summary,
+      itemTitle: itemTitle || b.itemTitle || "Outfit",
+      customerName: b.renterName || "Customer",
+      customerPhone: b.renterPhone || "",
+      ownerName: b.ownerName || "Owner",
+      ownerPhone: b.ownerPhone || "",
       loggedBy: "admin",
+      readableDate: getReadableDateString(),
       timestamp: serverTimestamp()
     });
 

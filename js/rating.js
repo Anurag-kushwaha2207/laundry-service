@@ -1,5 +1,5 @@
 import { db, auth } from "./firebase-config.js";
-import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { showToastNotification } from "./notifications.js";
 
 /**
@@ -53,14 +53,20 @@ export function openRatingModal({ bookingId, itemId, itemTitle, targetUserId, ro
     const feedback = document.getElementById("ratingFeedback").value.trim();
 
     try {
-      await addDoc(collection(db, "rental_ratings"), {
+      const timeStr = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
+      const ratingDocId = `RATING_${ratingValue}Star_${role || 'user'}_${timeStr}`;
+      await setDoc(doc(db, "rental_ratings", ratingDocId), {
         bookingId: bookingId,
         itemId: itemId,
+        itemTitle: itemTitle || "Outfit",
         reviewerId: user.uid,
+        reviewerEmail: user.email || "",
         targetUserId: targetUserId,
         reviewerRole: role, // "renter" or "owner"
         stars: ratingValue,
         feedback: feedback,
+        readableDate: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+        displaySummary: `${ratingValue}★ review by ${role || 'user'} (${user.email || user.uid}): "${feedback || 'No comments'}"`,
         createdAt: serverTimestamp()
       });
 

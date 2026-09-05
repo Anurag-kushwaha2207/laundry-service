@@ -2,12 +2,14 @@
 import { 
   collection, 
   addDoc, 
+  setDoc,
   onSnapshot, 
   updateDoc, 
   doc, 
   serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, auth } from "./firebase-config.js";
+import { generateNotificationDocId, getReadableDateString } from "./db-helper.js";
 
 // EmailJS Configuration
 const EMAILJS_CONFIG = {
@@ -52,23 +54,29 @@ export async function sendNotification({
       return null;
     }
 
-    // 1. Write to Firestore `notifications` collection
+    // 1. Write to Firestore `notifications` collection with structured readable ID
+    const targetPhone = cleanPhone10 || cleanPhone || "";
+    const targetName = (recipientName || cleanEmail.split("@")[0] || "User").trim();
+    const notifDocId = generateNotificationDocId(targetName, targetPhone, type);
+
     const notifData = {
       recipientUid: cleanUid,
       recipientEmail: cleanEmail,
       recipientPhone: cleanPhone,
       recipientPhone10: cleanPhone10,
-      recipientName: (recipientName || "").trim(),
+      recipientName: targetName,
       title,
       message,
       type,
       relatedId,
       read: false,
+      readableDate: getReadableDateString(),
+      displaySummary: `[${type || 'info'}] To: ${targetName} (${targetPhone || cleanEmail}) - ${title}`,
       createdAt: serverTimestamp()
     };
 
-    const docRef = await addDoc(collection(db, "notifications"), notifData);
-    console.log("In-app notification created for target:", cleanEmail || cleanPhone10 || cleanUid);
+    await setDoc(doc(db, "notifications", notifDocId), notifData);
+    console.log("In-app notification created with ID:", notifDocId);
 
     // 2. Send email via EmailJS in background if recipient email is present
     if (cleanEmail && typeof emailjs !== "undefined") {
@@ -85,7 +93,7 @@ export async function sendNotification({
         .catch(err => console.warn("Email dispatch failed (non-blocking):", err));
     }
 
-    return docRef.id;
+    return notifDocId;
   } catch (error) {
     console.error("Error creating notification:", error);
     return null;
