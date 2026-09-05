@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,7 +44,7 @@
     }
     .list-nav {
       display: flex;
-      gap: 16px;
+      gap: 14px;
       align-items: center;
     }
     .list-nav a {
@@ -55,15 +55,18 @@
       padding: 8px 16px;
       border-radius: 8px;
       transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .list-nav a:hover, .list-nav a.active {
+    .list-nav a:hover {
       color: #0284c7;
       background: #e0f2fe;
     }
     .list-hero {
       background: linear-gradient(135deg, #0284c7, #0369a1);
       color: #ffffff;
-      padding: 40px 20px;
+      padding: 42px 20px;
       text-align: center;
     }
     .list-hero h1 {
@@ -93,10 +96,10 @@
       border-radius: 10px;
       padding: 14px 18px;
       margin-bottom: 25px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
     .auth-banner.logged-in {
       background: #f0fdf4;
@@ -108,14 +111,10 @@
       border-color: #fde68a;
       color: #b45309;
     }
-    .auth-login-btn {
-      background: #0284c7;
-      color: #fff;
-      padding: 6px 14px;
-      border-radius: 6px;
-      text-decoration: none;
+    .auth-login-link {
+      color: #0284c7;
       font-weight: 600;
-      font-size: 13px;
+      text-decoration: underline;
     }
     .form-grid {
       display: grid;
@@ -150,13 +149,13 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    .form-group input:focus, .form-group select:focus {
       border-color: #0284c7;
       box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
     }
     .image-upload-box {
-      border: 2px dashed #cbd5e1;
-      border-radius: 12px;
+      border: 2px dashed #94a3b8;
+      border-radius: 10px;
       padding: 24px;
       text-align: center;
       background: #f8fafc;
@@ -174,27 +173,27 @@
     }
     .image-previews-container {
       display: flex;
-      flex-wrap: wrap;
       gap: 12px;
-      margin-top: 15px;
+      margin-top: 14px;
+      flex-wrap: wrap;
     }
     .preview-thumb {
       width: 90px;
       height: 90px;
-      border-radius: 8px;
       object-fit: cover;
-      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      border: 2px solid #0284c7;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
     .consent-card {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 14px 18px;
-      margin: 20px 0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 10px 0 24px;
       display: flex;
       align-items: flex-start;
-      gap: 12px;
+      gap: 10px;
     }
     .consent-card input[type="checkbox"] {
       width: 18px;
@@ -236,10 +235,10 @@
     }
     .status-msg-box {
       margin-top: 20px;
-      padding: 16px;
+      padding: 18px;
       border-radius: 10px;
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 500;
       display: none;
       text-align: center;
     }
@@ -257,13 +256,24 @@
     }
     .view-market-btn {
       display: inline-block;
-      margin-top: 12px;
+      margin-top: 14px;
       background: #15803d;
       color: #fff;
-      padding: 8px 18px;
-      border-radius: 6px;
+      padding: 10px 20px;
+      border-radius: 8px;
       text-decoration: none;
+      font-weight: 600;
       font-size: 14px;
+      transition: background 0.2s;
+    }
+    .view-market-btn:hover {
+      background: #166534;
+    }
+    .spin-icon {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
     }
     @media (max-width: 650px) {
       .form-grid {
@@ -277,7 +287,7 @@
 </head>
 <body class="list-page-body">
 
-  <!-- Header Navigation -->
+  <!-- Header Navigation (Clean: No Admin button for customers, No redundant List For Rent button) -->
   <header class="list-header">
     <div class="list-header-container">
       <a href="../index.html" class="list-brand">
@@ -286,28 +296,29 @@
       </a>
 
       <nav class="list-nav">
-        <a href="../index.html">🏠 Home</a>
-        <a href="browse.html">👗 Rent Clothes</a>
-        <a href="list-item.html" class="active">➕ List For Rent</a>
-        <a href="../admin/dashboard.html">🛡️ Admin</a>
+        <a href="../index.html">
+          <ion-icon name="home-outline"></ion-icon> Home
+        </a>
+        <a href="browse.html">
+          <ion-icon name="bag-handle-outline"></ion-icon> Rent Clothes
+        </a>
       </nav>
     </div>
   </header>
 
   <!-- Hero Section -->
   <section class="list-hero">
-    <h1>👗 अपने कपड़े Rent पर दें और कमाई करें</h1>
-    <p>List your designer & ethnic clothes for rent — instant live on marketplace!</p>
+    <h1>👗 List Your Clothes for Rent</h1>
+    <p>Turn your designer, wedding, and festive outfits into passive income — instant live on marketplace!</p>
   </section>
 
   <!-- Main Form Card -->
   <div class="list-wrapper">
     <div class="list-card">
 
-      <!-- Active User Identification Banner -->
+      <!-- Active User Identification Banner (Clean without Switch button) -->
       <div id="authBanner" class="auth-banner not-logged">
-        <span id="authBannerText">⚠️ चेकिंग लॉगिन स्थिति...</span>
-        <a href="../index.html" id="authActionBtn" class="auth-login-btn">Log In Here</a>
+        <span id="authBannerText">Checking login status...</span>
       </div>
 
       <form id="listItemForm">
@@ -316,89 +327,99 @@
           <!-- Title -->
           <div class="form-group full-width">
             <label for="title">
-              <ion-icon name="pricetag-outline"></ion-icon> कपड़ों का नाम / Outfit Title *
+              <ion-icon name="pricetag-outline"></ion-icon> Outfit Title / Name *
             </label>
-            <input type="text" id="title" required placeholder="उदा: Red Bridal Velvet Lehenga, Banarasi Silk Saree">
+            <input type="text" id="title" required placeholder="e.g. Red Velvet Bridal Lehenga, Raymond Slim-Fit Suit, Banarasi Silk Saree">
           </div>
 
-          <!-- Category -->
+          <!-- Category (Expanded with Many Options) -->
           <div class="form-group">
             <label for="category">
-              <ion-icon name="grid-outline"></ion-icon> कपड़ों की श्रेणी / Category *
+              <ion-icon name="grid-outline"></ion-icon> Clothing Category *
             </label>
             <select id="category" required>
-              <option value="">-- श्रेणी चुनें (Select) --</option>
-              <option value="saree">साड़ी (Saree)</option>
-              <option value="lehenga">लहंगा (Lehenga)</option>
-              <option value="sherwani">शेरवानी (Sherwani)</option>
-              <option value="suit">सूट (Suit / Anarkali)</option>
-              <option value="gown">गाउन (Indo-Western / Gown)</option>
-              <option value="kurta">कुर्ता (Kurta Pajama)</option>
-              <option value="other">अन्य (Other Ethnic Wear)</option>
+              <option value="">-- Select Category --</option>
+              <option value="saree">Saree (Silk, Banarasi, Designer, Partywear)</option>
+              <option value="lehenga">Lehenga Choli (Bridal & Partywear)</option>
+              <option value="sherwani">Sherwani & Indo-Western (Men)</option>
+              <option value="kurta">Kurta Pajama & Nehru Jacket</option>
+              <option value="suit">Men's Formal Suit & Blazer</option>
+              <option value="anarkali">Women's Suit, Salwar & Anarkali</option>
+              <option value="gown">Evening Party Gown & Western Dress</option>
+              <option value="wedding">Wedding & Bridal Special</option>
+              <option value="jeans">Casual Jeans & Denim</option>
+              <option value="shirt">Shirts & Casual Tops</option>
+              <option value="jacket">Jackets, Coats & Winter Wear</option>
+              <option value="shawl">Traditional Shawls, Stoles & Dupattas</option>
+              <option value="kids">Kids Ethnic & Festive Wear</option>
+              <option value="accessories">Fashion Accessories & Jewelry</option>
+              <option value="other">Other Outfits</option>
             </select>
           </div>
 
           <!-- Size -->
           <div class="form-group">
             <label for="size">
-              <ion-icon name="resize-outline"></ion-icon> साइज़ / Size *
+              <ion-icon name="resize-outline"></ion-icon> Size *
             </label>
             <select id="size" required>
-              <option value="">-- साइज़ चुनें --</option>
-              <option value="Free Size">Free Size (सभी के लिए उपयुक्त)</option>
-              <option value="S">S (Small)</option>
-              <option value="M">M (Medium)</option>
-              <option value="L">L (Large)</option>
-              <option value="XL">XL (Extra Large)</option>
+              <option value="">-- Select Size --</option>
+              <option value="Free Size">Free Size (Fits Most)</option>
+              <option value="XS">XS (Extra Small)</option>
+              <option value="S">Small (S)</option>
+              <option value="M">Medium (M)</option>
+              <option value="L">Large (L)</option>
+              <option value="XL">Extra Large (XL)</option>
               <option value="XXL">XXL (Double Extra Large)</option>
+              <option value="3XL">3XL (Triple Extra Large)</option>
             </select>
           </div>
 
           <!-- Condition -->
           <div class="form-group">
             <label for="condition">
-              <ion-icon name="sparkles-outline"></ion-icon> कपड़ों की हालत / Condition *
+              <ion-icon name="sparkles-outline"></ion-icon> Condition *
             </label>
             <select id="condition" required>
-              <option value="Brand New">बिल्कुल नया (Brand New - Never Worn)</option>
-              <option value="Like New" selected>नया जैसा (Like New - Worn 1-2 times)</option>
-              <option value="Good">अच्छी स्थिति (Good Condition - Clean & Maintained)</option>
+              <option value="Brand New">Brand New (Never Worn with Tags)</option>
+              <option value="Like New" selected>Like New (Worn 1-2 times, spotless)</option>
+              <option value="Good">Good (Clean and Well Maintained)</option>
             </select>
           </div>
 
           <!-- City / Location -->
           <div class="form-group">
             <label for="city">
-              <ion-icon name="location-outline"></ion-icon> आपका शहर / City *
+              <ion-icon name="location-outline"></ion-icon> City / Location *
             </label>
-            <input type="text" id="city" required placeholder="उदा: Delhi, Mumbai, Kanpur, Lucknow">
+            <input type="text" id="city" required placeholder="e.g. Etawah, Kanpur, Delhi, Lucknow">
           </div>
 
           <!-- Price Per Day -->
           <div class="form-group">
             <label for="pricePerDay">
-              <ion-icon name="cash-outline"></ion-icon> प्रतिदिन किराया / Rent Per Day (₹) *
+              <ion-icon name="cash-outline"></ion-icon> Rent Per Day (₹) *
             </label>
-            <input type="number" id="pricePerDay" required min="1" placeholder="उदा: 300">
+            <input type="number" id="pricePerDay" required min="1" placeholder="e.g. 299">
           </div>
 
           <!-- Security Deposit -->
           <div class="form-group">
             <label for="securityDeposit">
-              <ion-icon name="shield-checkmark-outline"></ion-icon> सुरक्षा राशि / Security Deposit (₹) *
+              <ion-icon name="shield-checkmark-outline"></ion-icon> Refundable Security Deposit (₹) *
             </label>
-            <input type="number" id="securityDeposit" required min="0" placeholder="उदा: 500 (वापसी योग्य)">
+            <input type="number" id="securityDeposit" required min="0" placeholder="e.g. 500 (Refundable upon return)">
           </div>
 
           <!-- Upload Photos -->
           <div class="form-group full-width">
             <label for="itemPhotos">
-              <ion-icon name="images-outline"></ion-icon> कपड़ों की तस्वीरें / Upload Photos (1 से 5 फ़ोटो) *
+              <ion-icon name="images-outline"></ion-icon> Upload Outfit Photos (1 to 5 Photos) *
             </label>
             <div class="image-upload-box" onclick="document.getElementById('itemPhotos').click()">
               <ion-icon name="cloud-upload-outline"></ion-icon>
-              <p style="margin: 0; font-weight: 600;">तस्वीरें चुनने के लिए यहाँ क्लिक करें (Click to Choose Photos)</p>
-              <span style="font-size: 13px; color: #64748b;">(JPG, PNG, WebP supported)</span>
+              <p style="margin: 0; font-weight: 600;">Click to Choose Photos from Gallery / Camera</p>
+              <span style="font-size: 13px; color: #64748b;">(JPG, PNG, WebP supported - automatically optimized)</span>
             </div>
             <input type="file" id="itemPhotos" accept="image/*" multiple required style="display: none;">
             
@@ -406,12 +427,12 @@
             <div id="previewsContainer" class="image-previews-container"></div>
           </div>
 
-          <!-- Owner Phone / WhatsApp -->
+          <!-- Contact / WhatsApp -->
           <div class="form-group full-width">
             <label for="ownerContact">
-              <ion-icon name="call-outline"></ion-icon> संपर्क फोन / WhatsApp नंबर *
+              <ion-icon name="call-outline"></ion-icon> Contact Phone / WhatsApp Number *
             </label>
-            <input type="tel" id="ownerContact" required placeholder="उदा: 9837101838">
+            <input type="tel" id="ownerContact" required placeholder="e.g. 9837101838">
           </div>
 
         </div>
@@ -420,14 +441,14 @@
         <div class="consent-card">
           <input type="checkbox" id="consentCheck" required>
           <label for="consentCheck">
-            मैं पुष्टि करता/करती हूँ कि यह आइटम मेरा है और यह रेंट पर देने से पहले और वापसी के बाद साफ-सुथरी स्थिति में रहेगा। मुझे इस आइटम को मार्केटप्लेस पर किराए पर देने की पूरी सहमति है।
+            I confirm that this outfit belongs to me and will be delivered in professionally cleaned condition. I authorize Laundry & Rentals to list this outfit in the marketplace for rental bookings.
           </label>
         </div>
 
         <!-- Submit Button -->
         <button type="submit" id="submitBtn" class="submit-list-btn">
           <ion-icon name="cloud-upload"></ion-icon>
-          <span>🚀 कपड़े लाइव लिस्ट करें (Publish for Rent)</span>
+          <span>🚀 Publish Clothes for Rent</span>
         </button>
       </form>
 

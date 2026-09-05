@@ -1,21 +1,19 @@
-import { db, auth, storage } from "./firebase-config.js";
+import { db, auth } from "./firebase-config.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const form = document.getElementById("listItemForm");
 const submitBtn = document.getElementById("submitBtn");
 const statusMsgBox = document.getElementById("statusMsgBox");
 const authBanner = document.getElementById("authBanner");
 const authBannerText = document.getElementById("authBannerText");
-const authActionBtn = document.getElementById("authActionBtn");
 const itemPhotosInput = document.getElementById("itemPhotos");
 const previewsContainer = document.getElementById("previewsContainer");
 const ownerContactInput = document.getElementById("ownerContact");
 
 let activeUser = null;
-let selectedImagesBase64 = [];
+let processedImageUrls = [];
 
-// 1. Detect Logged-in User (from Local Storage or Firebase Auth)
+// 1. Detect Logged-in User (Session check)
 function checkUserSession() {
   const savedUser = localStorage.getItem("laundry_current_user");
   if (savedUser) {
@@ -31,7 +29,7 @@ function checkUserSession() {
     if (user) {
       if (!activeUser) {
         activeUser = {
-          name: user.displayName || "User",
+          name: user.displayName || "Customer",
           email: user.email || "",
           phone: user.phoneNumber || "",
           uid: user.uid
@@ -50,106 +48,117 @@ function updateUserBanner() {
   if (activeUser) {
     authBanner.className = "auth-banner logged-in";
     const displayName = activeUser.name || "Customer";
-    const displayContact = activeUser.email || activeUser.phone || "";
-    authBannerText.innerHTML = `<span>👤 <strong>लॉग इन:</strong> ${displayName} (${displayContact})</span>`;
-    authActionBtn.textContent = "Switch Account";
-    authActionBtn.href = "../index.html";
+    const displayContact = activeUser.email || activeUser.phone || "Active Session";
+    authBannerText.innerHTML = `<span>👤 Logged in as: <strong>${displayName}</strong> (${displayContact})</span>`;
 
     if (ownerContactInput && !ownerContactInput.value && activeUser.phone) {
       ownerContactInput.value = activeUser.phone;
     }
   } else {
     authBanner.className = "auth-banner not-logged";
-    authBannerText.innerHTML = `<span>⚠️ आप लॉग इन नहीं हैं। कपड़े लिस्ट करने के लिए लॉग इन करें।</span>`;
-    authActionBtn.textContent = "Log In Here";
-    authActionBtn.href = "../index.html";
+    authBannerText.innerHTML = `<span>⚠️ You are not logged in. <a href="../index.html" class="auth-login-link">Please log in from Home</a> to list your clothes for rent.</span>`;
   }
 }
 
-// 2. Live Image Previews & Conversion to Base64
-itemPhotosInput.addEventListener("change", (e) => {
+// 2. High-speed Client-Side Image Compression using HTML5 Canvas
+// Converts large photos to lightweight, optimized JPEG data URLs in milliseconds!
+function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.72) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        resolve("https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80");
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = () => {
+      resolve("https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80");
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Live Photo Selection & Instant Thumbnail Preview
+itemPhotosInput.addEventListener("change", async (e) => {
   previewsContainer.innerHTML = "";
-  selectedImagesBase64 = [];
+  processedImageUrls = [];
   const files = e.target.files;
 
   if (!files || files.length === 0) return;
 
-  for (let i = 0; i < files.length; i++) {
+  for (let i = 0; i < files.length && i < 5; i++) {
     const file = files[i];
-    const reader = new FileReader();
+    const compressedDataUrl = await compressImage(file);
+    processedImageUrls.push(compressedDataUrl);
 
-    reader.onload = (event) => {
-      const base64Data = event.target.result;
-      selectedImagesBase64.push(base64Data);
-
-      const img = document.createElement("img");
-      img.src = base64Data;
-      img.className = "preview-thumb";
-      img.alt = `Photo ${i + 1}`;
-      previewsContainer.appendChild(img);
-    };
-
-    reader.readAsDataURL(file);
+    const img = document.createElement("img");
+    img.src = compressedDataUrl;
+    img.className = "preview-thumb";
+    img.alt = `Outfit Photo ${i + 1}`;
+    previewsContainer.appendChild(img);
   }
 });
-
-// Helper: Compress/Upload Images (Firebase Storage with Base64 fallback)
-async function processPhotos(files) {
-  let imageUrls = [];
-
-  // If Storage upload works, upload. If not, use Base64 data URLs directly!
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    try {
-      const storageRef = ref(storage, `rental-images/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`);
-      await uploadBytes(storageRef, file);
-      const downloadUrl = await getDownloadURL(storageRef);
-      imageUrls.push(downloadUrl);
-    } catch (storageErr) {
-      console.warn("Storage upload notice (using high-res Base64 fallback):", storageErr);
-      if (selectedImagesBase64[i]) {
-        imageUrls.push(selectedImagesBase64[i]);
-      }
-    }
-  }
-
-  // Fallback if array empty
-  if (imageUrls.length === 0 && selectedImagesBase64.length > 0) {
-    imageUrls = selectedImagesBase64;
-  }
-
-  // Default placeholder if none
-  if (imageUrls.length === 0) {
-    imageUrls.push("https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80");
-  }
-
-  return imageUrls;
-}
 
 // 3. Form Submission Handler
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   if (!activeUser) {
-    alert("⚠️ कपड़े लिस्ट करने से पहले कृपया लॉगिन करें (Please log in first)!");
+    alert("⚠️ Please log in from the Home page before listing clothes for rent!");
     window.location.href = "../index.html";
     return;
   }
 
   const files = itemPhotosInput.files;
-  if (!files || files.length === 0) {
-    alert("⚠️ कृपया कपड़ों की कम से कम 1 फ़ोटो ज़रूर अपलोड करें!");
+  if ((!files || files.length === 0) && processedImageUrls.length === 0) {
+    alert("⚠️ Please select at least 1 photo of your outfit!");
     return;
   }
 
-  // Disable submit button & show loading
+  // Disable button & show fast loading status
   submitBtn.disabled = true;
-  submitBtn.innerHTML = `<ion-icon name="sync-outline" class="spin-icon"></ion-icon> <span>फ़ोटो अपलोड और लिस्टिंग हो रही है...</span>`;
+  submitBtn.innerHTML = `<ion-icon name="sync-outline" class="spin-icon"></ion-icon> <span>Publishing your listing...</span>`;
   statusMsgBox.style.display = "none";
 
   try {
-    // 1. Process Photos
-    const imageUrls = await processPhotos(files);
+    // Process photos if not already processed
+    let finalImages = [...processedImageUrls];
+    if (finalImages.length === 0 && files && files.length > 0) {
+      for (let i = 0; i < files.length && i < 5; i++) {
+        const compressed = await compressImage(files[i]);
+        finalImages.push(compressed);
+      }
+    }
+
+    if (finalImages.length === 0) {
+      finalImages.push("https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80");
+    }
 
     const title = document.getElementById("title").value.trim();
     const category = document.getElementById("category").value;
@@ -160,10 +169,10 @@ form.addEventListener("submit", async (e) => {
     const securityDeposit = Number(document.getElementById("securityDeposit").value);
     const ownerContact = document.getElementById("ownerContact").value.trim();
 
-    // 2. Save Item to Firestore Collection 'rental_items'
-    // Status is "approved" so it IMMEDIATELY appears in "Rent Clothes" (browse.html) for all users!
+    // Save Item to Firestore Collection 'rental_items'
+    // Status is 'approved' so it appears IMMEDIATELY in 'Rent Clothes' (browse.html) for all users!
     const docRef = await addDoc(collection(db, "rental_items"), {
-      ownerId: activeUser.uid || activeUser.email || "owner",
+      ownerId: activeUser.uid || activeUser.email || "user",
       ownerName: activeUser.name || "Valued Owner",
       ownerEmail: activeUser.email || "",
       ownerPhone: ownerContact || activeUser.phone || "",
@@ -174,39 +183,39 @@ form.addEventListener("submit", async (e) => {
       city: city || "India",
       pricePerDay: pricePerDay,
       securityDeposit: securityDeposit,
-      images: imageUrls,
+      images: finalImages,
       status: "approved", // Live on marketplace instantly!
       consentGiven: true,
       verifiedByAdmin: true,
       createdAt: serverTimestamp()
     });
 
-    console.log("✅ Item listed with ID:", docRef.id);
+    console.log("✅ Outfit listed successfully with ID:", docRef.id);
 
-    // 3. Show Success Celebration Message
+    // Show Success Celebration Message in English
     statusMsgBox.className = "status-msg-box success";
     statusMsgBox.innerHTML = `
-      <div style="font-size: 28px; margin-bottom: 8px;">🎉</div>
-      <div style="font-size: 18px; font-weight: 700;">बधाई हो! आपके कपड़े सफलतापूर्वक लाइव लिस्ट हो गए हैं!</div>
+      <div style="font-size: 32px; margin-bottom: 6px;">🎉</div>
+      <div style="font-size: 18px; font-weight: 700; color: #15803d;">Congratulations! Your outfit has been listed successfully!</div>
       <p style="margin: 8px 0; font-size: 14px; color: #166534;">
-        अब यह आइटम 'Rent Clothes' मार्केटप्लेस में सभी ग्राहकों को तुरंत दिखाई दे रहा है।
+        Your listing is now live in the 'Rent Clothes' marketplace and visible to all customers immediately.
       </p>
-      <a href="browse.html" class="view-market-btn">👗 'Rent Clothes' में अभी देखें (View in Marketplace)</a>
+      <a href="browse.html" class="view-market-btn">👗 View in Rent Clothes Marketplace</a>
     `;
     statusMsgBox.style.display = "block";
 
     form.reset();
     previewsContainer.innerHTML = "";
-    selectedImagesBase64 = [];
+    processedImageUrls = [];
 
   } catch (err) {
     console.error("Listing Error:", err);
     statusMsgBox.className = "status-msg-box error";
-    statusMsgBox.innerHTML = `❌ लिस्टिंग में कोई समस्या आई: ${err.message || "कृपया दोबारा प्रयास करें।"}`;
+    statusMsgBox.innerHTML = `❌ Error publishing listing: ${err.message || "Please check your network connection and try again."}`;
     statusMsgBox.style.display = "block";
   } finally {
     submitBtn.disabled = false;
-    submitBtn.innerHTML = `<ion-icon name="cloud-upload"></ion-icon> <span>🚀 कपड़े लाइव लिस्ट करें (Publish for Rent)</span>`;
+    submitBtn.innerHTML = `<ion-icon name="cloud-upload"></ion-icon> <span>🚀 Publish Clothes for Rent</span>`;
   }
 });
 
