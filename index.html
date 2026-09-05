@@ -61,6 +61,7 @@
       <li><a href="rental/list-item.html">➕ List For Rent</a></li>
       <li id="adminNavLink" style="display: none;"><a href="admin/dashboard.html">🛡️ Admin</a></li>
       <li><a href="#about">About</a></li>
+      <li><a href="#reviews">Reviews</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
 
@@ -106,7 +107,7 @@
 
       <!-- LEFT -->
       <div class="services">
-        <h3>Our Services</h3>
+        <h2>Our Services</h2>
 
         <div class="service-item">
           <span>🧺 Dry Cleaning – ₹200</span>
@@ -152,7 +153,7 @@
       </div>
 
 
-      <!-- RIGHT -->
+      <!-- RIGHT (Sticky Cart Sidebar) -->
       <div class="cart">
         <h3>Added Items</h3>
 
@@ -167,13 +168,23 @@
         <h3 class="book-title">Book Now</h3>
 
         <div class="cart-form">
-          <input type="text" id="cartName" placeholder="Full Name" required>
-          <input type="email" id="cartEmail" placeholder="Email ID" required>
-          <input type="text" id="cartPhone" placeholder="Phone Number" required>
+          <div class="form-group">
+            <label for="cartName" class="form-label">Full Name</label>
+            <input type="text" id="cartName" placeholder="e.g. Rahul Sharma" required>
+          </div>
+          <div class="form-group">
+            <label for="cartEmail" class="form-label">Email Address</label>
+            <input type="email" id="cartEmail" placeholder="e.g. rahul@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="cartPhone" class="form-label">Phone Number</label>
+            <input type="text" id="cartPhone" placeholder="e.g. 9837101838" required>
+          </div>
           <button class="book-btn" onclick="submitBooking()">Book Now</button>
         </div>
       </div>
 
+    </div>
   </section>
 
   <section class="section quality" id="about">
@@ -193,7 +204,7 @@
     <div class="why-box">
       <h2 class="why-title">Why Choose Us?</h2>
       <p class="why-sub">
-        Premium quality • Quick support • Affordable prices
+        Premium quality &bull; Quick support &bull; Affordable prices
       </p>
 
       <div class="why-points">
@@ -208,8 +219,57 @@
 
   </section>
 
+  <!-- ================= DEDICATED CUSTOMER REVIEWS SECTION ================= -->
+  <section class="section reviews-section" id="reviews">
+    <div class="reviews-header">
+      <h2 class="section-title">What Our Customers Say</h2>
+      <p class="section-subtitle">Real feedback and experiences from clients who trust our professional laundry care.</p>
+    </div>
 
+    <div class="reviews-grid">
+      <div class="review-card">
+        <div class="stars">★ ★ ★ ★ ★</div>
+        <p class="review-text">
+          "Excellent service! Clothes arrived neatly pressed, smelling fresh, and delivered right on time."
+        </p>
+        <div class="review-author">
+          <div class="author-avatar">P</div>
+          <div class="author-details">
+            <strong>Pooja Verma</strong>
+            <span>Verified Customer</span>
+          </div>
+        </div>
+      </div>
 
+      <div class="review-card">
+        <div class="stars">★ ★ ★ ★ ★</div>
+        <p class="review-text">
+          "Very professional dry cleaning. They handled my expensive blazer with great care and removed tough stains."
+        </p>
+        <div class="review-author">
+          <div class="author-avatar">A</div>
+          <div class="author-details">
+            <strong>Amit Kumar</strong>
+            <span>Regular Client</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="stars">★ ★ ★ ★ ☆</div>
+        <p class="review-text">
+          "Affordable pricing, courteous delivery staff, and easy online booking. Highly recommended in Etawah!"
+        </p>
+        <div class="review-author">
+          <div class="author-avatar">N</div>
+          <div class="author-details">
+            <strong>Neha Singh</strong>
+            <span>Satisfied Customer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- ================= CONTACT ================= -->
   <section class="section contact" id="contact">
@@ -243,42 +303,29 @@
             </a>
           </p>
         </div>
-
-        <!-- ⭐ CUSTOMER REVIEWS -->
-        <div class="review-box">
-          <h3>Customer Reviews</h3>
-
-          <div class="single-review">
-            <div class="stars">★ ★ ★ ★ ★</div>
-            <p class="review-text">
-              Excellent service, clean clothes & on-time delivery.
-            </p>
-            <p class="review-user">— Happy Customer</p>
-          </div>
-
-          <div class="single-review">
-            <div class="stars">★ ★ ★ ★ ☆</div>
-            <p class="review-text">
-              Very professional staff and affordable pricing.
-            </p>
-            <p class="review-user">— Satisfied Customer</p>
-          </div>
-        </div>
       </div>
-
-
 
       <div class="contact-right">
         <h2>Send Message</h2>
 
         <form class="contact-form">
-          <input type="text" placeholder="Your Name">
-          <input type="email" placeholder="Your Email">
-          <textarea placeholder="Your Message"></textarea>
-          <button type="submit">Send</button>
+          <div class="form-group">
+            <label for="contactName" class="form-label">Your Name</label>
+            <input type="text" id="contactName" placeholder="e.g. Rahul Sharma" required>
+          </div>
+          <div class="form-group">
+            <label for="contactEmail" class="form-label">Your Email</label>
+            <input type="email" id="contactEmail" placeholder="e.g. rahul@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="contactMessage" class="form-label">Your Message</label>
+            <textarea id="contactMessage" placeholder="How can we assist you today?" rows="4" required></textarea>
+          </div>
+          <button type="submit" class="contact-submit-btn">Send Message</button>
         </form>
       </div>
 
+    </div>
   </section>
 
   <!-- ================= FOOTER ================= -->
@@ -286,7 +333,7 @@
 
     <!-- ADDRESS + MAP -->
     <div class="footer-box">
-      <h4>Our Address</h4>
+      <h3>Our Address</h3>
       <p>
         Lakhna City, Etawah<br>
         Shiv Colony Berikheda Road
@@ -299,7 +346,7 @@
 
     <!-- PRIVACY POLICY -->
     <div class="footer-box">
-      <h4>Privacy Policy</h4>
+      <h3>Privacy Policy</h3>
       <p>
         We respect your privacy. Any personal information such as name,
         email address or phone number collected on this website is used
@@ -312,7 +359,7 @@
 
     <!-- TERMS & CONDITIONS -->
     <div class="footer-box">
-      <h4>Terms & Conditions</h4>
+      <h3>Terms & Conditions</h3>
       <p>
         By using our services, you agree to our terms. Prices may vary
         based on fabric type and service requirements.
@@ -324,7 +371,7 @@
 
     <!-- SOCIAL LINKS -->
     <div class="footer-box">
-      <h4>Follow Us</h4>
+      <h3>Follow Us</h3>
       <div class="social-links">
         <a class="yt" href="https://www.youtube.com/@AnuragTalkies" target="_blank">
           <ion-icon name="logo-youtube"></ion-icon>
