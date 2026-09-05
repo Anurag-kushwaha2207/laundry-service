@@ -70,6 +70,22 @@ document.addEventListener("DOMContentLoaded", () => {
     currentUser = JSON.parse(savedUser);
     updateNavbarUser(currentUser.name);
     prefillCartForm();
+
+    // Verify and persist admin role from Firestore
+    if (currentUser && currentUser.email && db && typeof db.collection === "function") {
+      const cleanEmail = currentUser.email.toLowerCase().trim();
+      db.collection("users").doc(cleanEmail).get().then((docSnap) => {
+        if (docSnap.exists && docSnap.data()) {
+          const role = (docSnap.data().role || "").toLowerCase().trim();
+          if (role === "admin") {
+            currentUser.role = "admin";
+            localStorage.setItem("laundry_current_user", JSON.stringify(currentUser));
+            const adminNavLink = document.getElementById("adminNavLink");
+            if (adminNavLink) adminNavLink.style.display = "inline-block";
+          }
+        }
+      }).catch((e) => console.warn("Admin check on load:", e));
+    }
   }
 });
 
@@ -474,7 +490,14 @@ async function verifyOTPCode() {
       await saveCloudUser(tempAuthData.email, newUser);
       currentUser = { name: tempAuthData.name, email: tempAuthData.email.toLowerCase(), phone: tempAuthData.phone };
     } else {
-      currentUser = { name: tempAuthData.name, email: tempAuthData.email.toLowerCase(), phone: tempAuthData.phone };
+      const existingUser = await getCloudUser(tempAuthData.email);
+      const userRole = (existingUser && existingUser.role) ? existingUser.role : "customer";
+      currentUser = { 
+        name: tempAuthData.name, 
+        email: tempAuthData.email.toLowerCase().trim(), 
+        phone: tempAuthData.phone,
+        role: userRole
+      };
     }
   }
 
@@ -526,14 +549,20 @@ function setupRealtimeAdminListener() {
   if (db && typeof db.collection === "function") {
     try {
       realTimeAdminUnsubscribe = db.collection("users").doc(cleanEmail).onSnapshot((docSnap) => {
-        if (docSnap.exists && docSnap.data() && docSnap.data().role === "admin") {
+        const data = docSnap.exists ? docSnap.data() : null;
+        const role = data && data.role ? String(data.role).toLowerCase().trim() : "";
+        if (role === "admin") {
           console.log("⚡ [Realtime Admin Listener] Admin role verified in Firebase for:", cleanEmail);
           adminNavLink.style.display = "inline-block";
-          if (currentUser) currentUser.role = "admin";
+          if (currentUser) {
+            currentUser.role = "admin";
+            localStorage.setItem("laundry_current_user", JSON.stringify(currentUser));
+          }
         } else {
           adminNavLink.style.display = "none";
           if (currentUser && currentUser.role === "admin") {
             delete currentUser.role;
+            localStorage.setItem("laundry_current_user", JSON.stringify(currentUser));
           }
         }
       }, (err) => {

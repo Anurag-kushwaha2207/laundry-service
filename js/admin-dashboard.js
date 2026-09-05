@@ -30,17 +30,24 @@ async function initDashboard() {
 
   // Helper to verify admin permissions solely from Firebase Firestore
   async function checkUserAdminInFirebase(userEmail) {
-    if (!userEmail) return false;
+    if (!userEmail) return { isAllowed: false, reason: "No email provided" };
     try {
       const cleanEmail = userEmail.toLowerCase().trim();
       const userSnap = await getDoc(doc(db, "users", cleanEmail));
-      if (userSnap.exists() && userSnap.data().role === "admin") {
-        return true;
+      if (!userSnap.exists()) {
+        return { isAllowed: false, reason: `User '${cleanEmail}' not found in Firestore 'users' collection.` };
+      }
+      const data = userSnap.data();
+      const role = data && data.role ? String(data.role).toLowerCase().trim() : "";
+      if (role === "admin") {
+        return { isAllowed: true, role: role };
+      } else {
+        return { isAllowed: false, reason: `Role is '${data.role || "none"}', not 'admin'.` };
       }
     } catch (e) {
-      console.warn("Firestore admin check error:", e);
+      console.error("Firestore admin check error:", e);
+      return { isAllowed: false, reason: `Firestore connection error: ${e.message}` };
     }
-    return false;
   }
 
   // 1. Check local user session (website login session)
@@ -60,7 +67,14 @@ async function initDashboard() {
     // Check if session has admin role or Firestore confirms admin role
     let isAllowed = localUser.role === "admin";
     if (!isAllowed) {
-      isAllowed = await checkUserAdminInFirebase(cleanEmail);
+      const checkResult = await checkUserAdminInFirebase(cleanEmail);
+      isAllowed = checkResult.isAllowed;
+      if (isAllowed) {
+        localUser.role = "admin";
+        localStorage.setItem("laundry_current_user", JSON.stringify(localUser));
+      } else {
+        console.warn("Permission check detail:", checkResult.reason);
+      }
     }
 
     if (isAllowed) {
@@ -69,7 +83,7 @@ async function initDashboard() {
       loadDashboardData();
       return;
     } else {
-      alert("🔒 Access Denied: Aapke account ko Firebase me Admin role nahi mila hai.");
+      alert("🔒 Access Denied: Sirf unhi accounts ko permission hai jinka role Firebase me 'admin' hai.");
       window.location.href = "../index.html";
       return;
     }
@@ -78,8 +92,8 @@ async function initDashboard() {
   // 2. If no local user, check Firebase Auth as fallback
   auth.onAuthStateChanged(async (user) => {
     if (user && user.email) {
-      const isAllowed = await checkUserAdminInFirebase(user.email);
-      if (isAllowed) {
+      const checkResult = await checkUserAdminInFirebase(user.email);
+      if (checkResult.isAllowed) {
         console.log("✅ Admin access granted via Firebase Auth:", user.email);
         if (securityOverlay) securityOverlay.style.display = "none";
         loadDashboardData();
