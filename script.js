@@ -344,58 +344,35 @@ function initRecaptcha() {
 }
 
 async function sendLoginOTP() {
-  const loginInput = (document.getElementById("loginPhone") ? document.getElementById("loginPhone").value : "").trim();
+  const email = document.getElementById("loginEmail").value.trim();
 
-  if (!loginInput) {
-    alert("Please enter your 10-digit Mobile Phone Number.");
+  if (!email || !validateEmail(email)) {
+    alert("Please enter a valid Email ID.");
     return;
   }
 
-  let formattedPhone = loginInput;
-  if (!formattedPhone.startsWith("+")) {
-    formattedPhone = "+91" + formattedPhone.replace(/\D/g, '').slice(-10);
+  const user = await getCloudUser(email);
+  if (!user) {
+    alert("Email not registered! Switch to Create Account to sign up first.");
+    switchAuthView('register');
+    document.getElementById("regEmail").value = email;
+    return;
   }
 
+  // Generate 6-digit random OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   tempAuthData = {
-    name: "Valued Customer",
-    email: `${loginInput.replace(/\D/g, '')}@laundryservices.app`,
-    phone: loginInput,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
     otp: otp,
     isRegistering: false
   };
 
-  // Try fetching registered cloud user details by email or phone if existing
-  try {
-    const existingUser = await getCloudUser(tempAuthData.email);
-    if (existingUser) {
-      tempAuthData.name = existingUser.name || tempAuthData.name;
-      tempAuthData.email = existingUser.email || tempAuthData.email;
-    }
-  } catch (e) {
-    console.log("Cloud user lookup notice:", e);
-  }
+  // Send actual email via EmailJS
+  await sendOTPEmail(user.name, user.email, otp);
 
-  // Trigger Firebase Mobile SMS OTP
-  initRecaptcha();
-  if (typeof firebase !== "undefined" && firebase.auth && window.recaptchaVerifier) {
-    try {
-      const appVerifier = window.recaptchaVerifier;
-      window.confirmationResult = await firebase.auth().signInWithPhoneNumber(formattedPhone, appVerifier);
-      alert(`📲 SMS OTP sent to your Mobile Number (${formattedPhone}). Please check your phone SMS!`);
-    } catch (firebaseErr) {
-      console.warn("Firebase Phone Auth notice:", firebaseErr);
-      if (firebaseErr.code === "auth/too-many-requests") {
-        alert(`⚠️ Firebase SMS Rate Limit (Too many rapid requests).\n\nTemporary Verification Code: ${otp}`);
-      } else {
-        alert(`📱 Mobile SMS OTP Code sent to: ${formattedPhone}\n\n(Verification Code: ${otp})`);
-      }
-    }
-  } else {
-    alert(`📱 Mobile SMS OTP Code sent to: ${formattedPhone}\n\n(Verification Code: ${otp})`);
-  }
-
-  document.getElementById("otpSubtitle").innerText = `📱 Mobile SMS OTP code sent to: ${formattedPhone}`;
+  document.getElementById("otpSubtitle").innerText = `We sent a 6-digit login OTP code to: ${user.email}`;
   switchAuthView('otp');
 }
 
@@ -421,13 +398,12 @@ async function sendRegisterOTP() {
   if (existingUser) {
     alert("Account already exists with this Email! Please login instead.");
     switchAuthView('login');
-    if (document.getElementById("loginPhone")) document.getElementById("loginPhone").value = phone;
+    document.getElementById("loginEmail").value = email;
     return;
   }
 
-  let formattedPhone = phone.startsWith("+") ? phone : "+91" + phone.replace(/\D/g, '').slice(-10);
+  // Generate 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
   tempAuthData = {
     name: name,
     email: email,
@@ -436,26 +412,10 @@ async function sendRegisterOTP() {
     isRegistering: true
   };
 
-  // Real Production Firebase Mobile SMS OTP Trigger
-  initRecaptcha();
-  if (typeof firebase !== "undefined" && firebase.auth && window.recaptchaVerifier) {
-    try {
-      const appVerifier = window.recaptchaVerifier;
-      window.confirmationResult = await firebase.auth().signInWithPhoneNumber(formattedPhone, appVerifier);
-      alert(`📲 SMS OTP sent to your Mobile Number (${formattedPhone}). Please check your phone SMS!`);
-    } catch (firebaseErr) {
-      console.warn("Firebase Phone Auth notice:", firebaseErr);
-      if (firebaseErr.code === "auth/too-many-requests") {
-        alert(`⚠️ Firebase SMS Rate Limit (Too many rapid requests).\n\nTemporary Verification Code: ${otp}`);
-      } else {
-        alert(`📱 Mobile SMS OTP Code sent to: ${formattedPhone}\n\n(Verification Code: ${otp})`);
-      }
-    }
-  } else {
-    alert(`📱 Mobile SMS OTP Code sent to: ${formattedPhone}\n\n(Verification Code: ${otp})`);
-  }
+  // Send actual email via EmailJS
+  await sendOTPEmail(name, email, otp);
 
-  document.getElementById("otpSubtitle").innerText = `📱 Mobile SMS OTP code sent to: ${formattedPhone}`;
+  document.getElementById("otpSubtitle").innerText = `We sent a 6-digit registration OTP code to: ${email}`;
   switchAuthView('otp');
 }
 
@@ -466,19 +426,8 @@ async function verifyOTPCode() {
     return;
   }
 
-  // Firebase Mobile SMS Verification
-  if (window.confirmationResult) {
-    try {
-      await window.confirmationResult.confirm(enteredOtp);
-      console.log("Firebase Mobile Phone Verification Success!");
-    } catch (error) {
-      if (enteredOtp !== tempAuthData.otp) {
-        alert("Incorrect Mobile OTP code. Please enter the correct code.");
-        return;
-      }
-    }
-  } else if (enteredOtp !== tempAuthData.otp) {
-    alert("Incorrect Mobile OTP code. Please enter the correct code.");
+  if (enteredOtp !== tempAuthData.otp) {
+    alert("Incorrect OTP code. Please enter the correct code sent to your email.");
     return;
   }
 
