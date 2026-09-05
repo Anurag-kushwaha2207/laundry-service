@@ -2365,6 +2365,115 @@ body{
   border-radius: 20px;
 }
 
+/* Modern Delivery Rider & Admin Action Styles */
+.rider-action-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.rider-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.rider-btn ion-icon {
+  font-size: 16px;
+}
+
+.rider-btn.call-btn {
+  background: #0284c7;
+  color: #ffffff;
+}
+.rider-btn.call-btn:hover {
+  background: #0369a1;
+  transform: translateY(-1px);
+}
+
+.rider-btn.wa-btn {
+  background: #22c55e;
+  color: #ffffff;
+}
+.rider-btn.wa-btn:hover {
+  background: #16a34a;
+  transform: translateY(-1px);
+}
+
+.rider-btn.map-btn {
+  background: #ea580c;
+  color: #ffffff;
+}
+.rider-btn.map-btn:hover {
+  background: #c2410c;
+  transform: translateY(-1px);
+}
+
+.rider-btn.sec-btn {
+  background: #475569;
+  color: #ffffff;
+}
+.rider-btn.sec-btn:hover {
+  background: #334155;
+  transform: translateY(-1px);
+}
+
+.delivery-dest-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.owner-source-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 12px;
+}
+
+.active-user-badge {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.login-alert-badge {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.login-alert-badge a {
+  color: #0284c7;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
 /* ================= TOAST NOTIFICATIONS STYLES ================= */
 .toast-container {
   position: fixed;

@@ -296,7 +296,7 @@ function renderTrackingTab() {
   });
 }
 
-// Create Tracking Card HTML
+// Create Tracking Card HTML with Modern Delivery App UI & Contact Actions
 function createTrackingCard(b) {
   const stages = [
     { key: "confirmed", label: "1. Confirmed", icon: "checkmark-circle-outline" },
@@ -304,26 +304,95 @@ function createTrackingCard(b) {
     { key: "cleaning_in_progress", label: "3. Laundry Cleaned", icon: "sparkles-outline" },
     { key: "delivered_to_renter", label: "4. Delivered to Renter", icon: "home-outline" },
     { key: "picked_up_from_renter", label: "5. Return Pickup", icon: "return-down-back-outline" },
-    { key: "returned_to_owner", label: "6. Returned to Owner", icon: "ribbon-outline" }
+    { key: "returned_to_owner", label: "6. Returned & Refunded", icon: "ribbon-outline" }
   ];
 
   const currentIdx = stages.findIndex(s => s.key === (b.status || "confirmed"));
   const nextStage = currentIdx < stages.length - 1 ? stages[currentIdx + 1] : null;
+  const currentStageLabel = currentIdx >= 0 ? stages[currentIdx].label : (b.status || "Confirmed");
+
+  const renterCleanPhone = (b.renterPhone || "").replace(/[^0-9]/g, "");
+  const ownerCleanPhone = (b.ownerPhone || "").replace(/[^0-9]/g, "");
+  const fullAddress = `${b.deliveryAddress || 'Address on file'}, ${b.deliveryCity || ''} ${b.deliveryPincode ? '- ' + b.deliveryPincode : ''}`;
+
+  const customerWaMsg = encodeURIComponent(`Hello ${b.renterName || 'Customer'}! Update regarding your rental order #${b.id.substring(0, 6)} for "${b.itemTitle || 'Outfit'}": Status is [${currentStageLabel}]. Our delivery executive will reach your address: ${fullAddress}.`);
+  const ownerWaMsg = encodeURIComponent(`Hello ${b.ownerName || 'Owner'}! Update regarding rental booking #${b.id.substring(0, 6)} for your outfit "${b.itemTitle || 'Outfit'}": Status is [${currentStageLabel}].`);
 
   return `
     <div class="tracking-card">
       <div class="tracking-card-header">
-        <div>
-          <h3>${b.itemTitle || 'Rental Outfit'}</h3>
-          <span class="booking-id-tag">Booking ID: <code>${b.id}</code></span>
+        <div style="display: flex; gap: 14px; align-items: center;">
+          ${b.itemImage ? `<img src="${b.itemImage}" style="width: 58px; height: 58px; border-radius: 8px; object-fit: cover; border: 1px solid #e2e8f0;">` : ''}
+          <div>
+            <h3 style="margin: 0; font-size: 18px; color: #0f172a;">${b.itemTitle || 'Rental Outfit'}</h3>
+            <span class="booking-id-tag">Order ID: <code>#${b.id.substring(0, 8).toUpperCase()}</code> &bull; ${b.startDate} to ${b.endDate} (${b.rentalDays || 1} days)</span>
+          </div>
         </div>
-        <span class="status-badge badge-approved">${(b.status || 'confirmed').replace(/_/g, ' ').toUpperCase()}</span>
+        <span class="status-badge badge-approved" style="font-size: 13px; padding: 6px 14px;">${currentStageLabel.toUpperCase()}</span>
       </div>
 
-      <div class="tracking-meta">
-        <p><strong>Renter:</strong> ${b.renterEmail || 'N/A'}</p>
-        <p><strong>Rental Period:</strong> ${b.startDate} to ${b.endDate} (${b.rentalDays} days)</p>
-        <p><strong>Total Paid:</strong> ₹${b.grandTotal} (Deposit: ₹${b.securityDeposit})</p>
+      <!-- Modern Two-Column Logistics Grid -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 15px 0;">
+        
+        <!-- Customer Delivery Destination Box -->
+        <div class="delivery-dest-box">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <strong style="color: #166534; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+              <ion-icon name="location-sharp" style="font-size: 18px;"></ion-icon> Delivery Destination (Customer)
+            </strong>
+          </div>
+          <p style="margin: 4px 0; font-size: 14px;"><strong>Recipient:</strong> ${b.renterName || 'Customer'} (${b.renterPhone || 'No Phone'})</p>
+          <p style="margin: 4px 0; font-size: 13.5px; color: #334155;"><strong>Address:</strong> ${fullAddress}</p>
+          ${b.deliveryNotes ? `<p style="margin: 4px 0; font-size: 12.5px; color: #64748b;"><strong>Note / Landmark:</strong> ${b.deliveryNotes}</p>` : ''}
+          
+          <!-- Delivery Rider Quick Actions -->
+          <div class="rider-action-bar">
+            ${renterCleanPhone ? `
+              <a href="tel:${renterCleanPhone}" class="rider-btn call-btn">
+                <ion-icon name="call"></ion-icon> Call Customer
+              </a>
+              <a href="https://wa.me/91${renterCleanPhone}?text=${customerWaMsg}" target="_blank" class="rider-btn wa-btn">
+                <ion-icon name="logo-whatsapp"></ion-icon> WhatsApp
+              </a>
+            ` : ''}
+            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}" target="_blank" class="rider-btn map-btn">
+              <ion-icon name="navigate"></ion-icon> Google Maps
+            </a>
+          </div>
+        </div>
+
+        <!-- Owner Pickup Box -->
+        <div class="owner-source-box">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <strong style="color: #475569; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+              <ion-icon name="home-sharp" style="font-size: 18px;"></ion-icon> Pickup Origin (Owner)
+            </strong>
+          </div>
+          <p style="margin: 4px 0; font-size: 14px;"><strong>Owner:</strong> ${b.ownerName || 'Outfit Owner'} (${b.ownerCity || 'India'})</p>
+          <p style="margin: 4px 0; font-size: 13.5px; color: #334155;"><strong>Contact:</strong> ${b.ownerPhone || 'N/A'} ${b.ownerEmail ? `&bull; ${b.ownerEmail}` : ''}</p>
+          
+          <!-- Owner Quick Actions -->
+          <div class="rider-action-bar">
+            ${ownerCleanPhone ? `
+              <a href="tel:${ownerCleanPhone}" class="rider-btn sec-btn">
+                <ion-icon name="call"></ion-icon> Call Owner
+              </a>
+              <a href="https://wa.me/91${ownerCleanPhone}?text=${ownerWaMsg}" target="_blank" class="rider-btn wa-btn">
+                <ion-icon name="logo-whatsapp"></ion-icon> WhatsApp
+              </a>
+            ` : ''}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Financials Strip -->
+      <div class="tracking-meta" style="margin-bottom: 15px;">
+        <span><strong>Rent Amount:</strong> ₹${b.rentalAmount || 0}</span>
+        <span><strong>Security Deposit:</strong> ₹${b.securityDeposit || 0} (Refundable)</span>
+        <span><strong>Service Fee:</strong> ₹${b.serviceFee || 0}</span>
+        <span><strong>Total Paid:</strong> <strong style="color: #15803d; font-size: 15px;">₹${b.grandTotal || 0}</strong></span>
+        <span><strong>Payment ID:</strong> <code>${b.paymentId || 'Pending'}</code></span>
       </div>
 
       <!-- Stage Timeline Progress Bar -->
@@ -336,13 +405,13 @@ function createTrackingCard(b) {
         `).join("")}
       </div>
 
-      <div class="tracking-actions">
+      <div class="tracking-actions" style="margin-top: 15px; display: flex; justify-content: flex-end;">
         ${nextStage ? `
-          <button class="action-btn approve-btn advance-stage-btn" data-id="${b.id}" data-nextstage="${nextStage.key}" data-title="${b.itemTitle || 'Outfit'}">
-            Advance to: ${nextStage.label}
+          <button class="action-btn approve-btn advance-stage-btn" data-id="${b.id}" data-nextstage="${nextStage.key}" data-title="${b.itemTitle || 'Outfit'}" style="background: #0284c7; color: #fff; padding: 10px 20px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; border: none; display: flex; align-items: center; gap: 8px;">
+            <ion-icon name="arrow-forward-circle-outline" style="font-size: 20px;"></ion-icon> Advance Order to: ${nextStage.label}
           </button>
         ` : `
-          <span class="completed-banner">🎉 Order Lifecycle Fully Completed!</span>
+          <span class="completed-banner" style="font-size: 15px; padding: 10px 20px;">🎉 Rental Order Lifecycle Fully Completed & Deposit Refunded!</span>
         `}
       </div>
     </div>
