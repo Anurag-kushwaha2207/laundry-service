@@ -360,10 +360,9 @@
         <h2 class="modal-title">Welcome Back</h2>
         <p class="modal-subtitle">Log in to view your details & laundry history</p>
         <div class="modal-form">
-          <input type="email" id="loginEmail" placeholder="Enter your Email ID" required>
-          <button class="modal-btn" onclick="sendLoginOTP()">Send Login OTP</button>
-          <p class="modal-switch">New User? <a href="#" onclick="switchAuthView('register')">Register / Create
-              Account</a></p>
+          <input type="tel" id="loginPhone" placeholder="Enter 10-Digit Mobile Number" maxlength="10" required>
+          <button class="modal-btn" onclick="sendLoginOTP()">Send Mobile OTP</button>
+          <p class="modal-switch">New User? <a href="#" onclick="switchAuthView('register')">Register / Create Account</a></p>
         </div>
       </div>
 
