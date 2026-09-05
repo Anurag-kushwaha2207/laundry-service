@@ -2,50 +2,39 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    // Users Collection - Allow read to verify admin role and profile data
+    match /users/{userId} {
+      allow read, write: if true;
     }
 
-    // Rental Items Collection
+    // Rental Items Collection - Public marketplace
     match /rental_items/{itemId} {
-      allow read: if true; // Public read for browse & details
-      allow create: if isSignedIn(); // Logged-in users can list items
-      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || request.auth.token.admin == true);
+      allow read, write: if true;
     }
 
     // Rental Bookings Collection
     match /rental_bookings/{bookingId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
+      allow read, write: if true;
     }
 
     // Pickup & Delivery Logs
     match /pickup_delivery_logs/{logId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
+      allow read, write: if true;
     }
 
     // Payments Collection
     match /payments/{paymentId} {
-      allow read: if isSignedIn() && (resource.data.renterId == request.auth.uid || request.auth.token.admin == true);
-      allow create: if isSignedIn();
+      allow read, write: if true;
     }
 
     // Rental Ratings & Reviews
     match /rental_ratings/{ratingId} {
-      allow read: if true;
-      allow create: if isSignedIn();
+      allow read, write: if true;
     }
 
-    // Users Collection
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
+    // Default rule
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }
