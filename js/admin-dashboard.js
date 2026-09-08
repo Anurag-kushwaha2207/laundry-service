@@ -1,4 +1,5 @@
 import { db, auth } from "./firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { 
   collection, 
   onSnapshot, 
@@ -45,7 +46,7 @@ async function initDashboard() {
       const data = userSnap.data();
       const role = data && data.role ? String(data.role).toLowerCase().trim() : "";
       if (role === "admin") {
-        return { isAllowed: true, role: role };
+        return { isAllowed: true, role: role, name: data.name || "Admin", phone: data.phone || "" };
       } else {
         return { isAllowed: false, reason: `Role is '${data.role || "none"}', not 'admin'.` };
       }
@@ -53,6 +54,62 @@ async function initDashboard() {
       console.error("Firestore admin check error:", e);
       return { isAllowed: false, reason: `Firestore connection error: ${e.message}` };
     }
+  }
+
+  function grantAdminAccess(email, name = "Admin") {
+    console.log("✅ Admin access granted for:", email);
+    if (securityOverlay) securityOverlay.style.display = "none";
+    loadDashboardData();
+  }
+
+  function showAdminLoginForm(initialMsg = "") {
+    if (!securityOverlay) return;
+    const box = securityOverlay.querySelector(".security-box");
+    if (!box) return;
+
+    box.innerHTML = `
+      <ion-icon name="shield-checkmark" style="font-size: 48px; color: #38bdf8; margin-bottom: 8px;"></ion-icon>
+      <h2 style="font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px;">Admin Authentication</h2>
+      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">Enter your registered Admin Email to enter the dashboard.</p>
+      <form id="adminVerifyForm" style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+        <label style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Admin Email Address</label>
+        <input type="email" id="adminEmailInput" placeholder="e.g. ps591362@gmail.com" required style="padding: 11px 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 14px; box-sizing: border-box;">
+        <button type="submit" id="adminVerifyBtn" style="padding: 12px; background: #0284c7; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px;">
+          <ion-icon name="lock-open-outline"></ion-icon> Verify & Enter Dashboard
+        </button>
+        <div id="adminVerifyStatus" style="font-size: 12.5px; margin-top: 4px; color: #f87171; ${initialMsg ? 'display: block;' : 'display: none;'}">${initialMsg}</div>
+        <div style="text-align: center; margin-top: 8px;">
+          <a href="../index.html" style="color: #38bdf8; font-size: 13px; text-decoration: none;">← Return to Main Website</a>
+        </div>
+      </form>
+    `;
+
+    const form = document.getElementById("adminVerifyForm");
+    const emailInput = document.getElementById("adminEmailInput");
+    const statusDiv = document.getElementById("adminVerifyStatus");
+    const btn = document.getElementById("adminVerifyBtn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim().toLowerCase();
+      if (!email) return;
+
+      btn.disabled = true;
+      btn.innerHTML = `<ion-icon name="sync-outline" class="spin-icon"></ion-icon> Verifying...`;
+      statusDiv.style.display = "none";
+
+      const check = await checkUserAdminInFirebase(email);
+      if (check.isAllowed) {
+        const userObj = { email: email, role: "admin", name: check.name || "Admin", phone: check.phone || "" };
+        localStorage.setItem("laundry_current_user", JSON.stringify(userObj));
+        grantAdminAccess(email, check.name);
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = `<ion-icon name="lock-open-outline"></ion-icon> Verify & Enter Dashboard`;
+        statusDiv.style.display = "block";
+        statusDiv.innerHTML = `❌ Access Denied: <strong>${email}</strong> does not have 'admin' role in Firebase.`;
+      }
+    });
   }
 
   // 1. Check local user session (website login session)
@@ -68,47 +125,37 @@ async function initDashboard() {
 
   if (localUser && localUser.email) {
     const cleanEmail = (localUser.email || "").toLowerCase().trim();
-    
-    // Check if session has admin role or Firestore confirms admin role
-    let isAllowed = localUser.role === "admin";
-    if (!isAllowed) {
-      const checkResult = await checkUserAdminInFirebase(cleanEmail);
-      isAllowed = checkResult.isAllowed;
-      if (isAllowed) {
-        localUser.role = "admin";
-        localStorage.setItem("laundry_current_user", JSON.stringify(localUser));
-      } else {
-        console.warn("Permission check detail:", checkResult.reason);
-      }
-    }
-
-    if (isAllowed) {
-      console.log("✅ Admin access granted for:", cleanEmail);
-      if (securityOverlay) securityOverlay.style.display = "none";
-      loadDashboardData();
+    const checkResult = await checkUserAdminInFirebase(cleanEmail);
+    if (checkResult.isAllowed) {
+      localUser.role = "admin";
+      localStorage.setItem("laundry_current_user", JSON.stringify(localUser));
+      grantAdminAccess(cleanEmail, checkResult.name);
       return;
     } else {
-      alert("🔒 Access Denied: Only accounts with an 'admin' role in Firebase are authorized to access this dashboard.");
-      window.location.href = "../index.html";
+      console.warn("User is logged in but not admin in Firestore:", cleanEmail);
+      showAdminLoginForm(`Account <strong>${cleanEmail}</strong> is not configured as an Admin in Firebase.`);
       return;
     }
   }
 
-  // 2. If no local user, check Firebase Auth as fallback
-  auth.onAuthStateChanged(async (user) => {
-    if (user && user.email) {
-      const checkResult = await checkUserAdminInFirebase(user.email);
-      if (checkResult.isAllowed) {
-        console.log("✅ Admin access granted via Firebase Auth:", user.email);
-        if (securityOverlay) securityOverlay.style.display = "none";
-        loadDashboardData();
-        return;
+  // 2. If no local user, check Firebase Auth
+  try {
+    onAuthStateChanged(auth, async (user) => {
+      if (user && user.email) {
+        const checkResult = await checkUserAdminInFirebase(user.email);
+        if (checkResult.isAllowed) {
+          const userObj = { email: user.email, role: "admin", name: checkResult.name || user.displayName || "Admin" };
+          localStorage.setItem("laundry_current_user", JSON.stringify(userObj));
+          grantAdminAccess(user.email, checkResult.name);
+          return;
+        }
       }
-    }
-
-    alert("🔒 Access Denied: Please log in with an authorized Admin account first.");
-    window.location.href = "../index.html";
-  });
+      showAdminLoginForm();
+    });
+  } catch (err) {
+    console.warn("onAuthStateChanged error:", err);
+    showAdminLoginForm();
+  }
 }
 
 function loadDashboardData() {
@@ -1042,8 +1089,7 @@ async function handleAdvanceTrackingStage(bookingId, nextStage, itemTitle) {
       "returned_to_owner": "Your rental order lifecycle is complete! Thank you for using Laundry & Rentals."
     };
 
-    const b = activeBookings.find(x => x.id === bookingId);
-    if (b) {
+    if (b && (b.renterId || b.renterEmail || b.renterPhone)) {
       // Send In-App & Email Notification to Customer
       sendNotification({
         recipientUid: b.renterId || "",
@@ -1075,5 +1121,9 @@ tabBtns.forEach(btn => {
   });
 });
 
-// Start dashboard on DOM ready
-document.addEventListener("DOMContentLoaded", initDashboard);
+// Start dashboard on DOM ready or immediately if already loaded
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initDashboard);
+} else {
+  initDashboard();
+}
