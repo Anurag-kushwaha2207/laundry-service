@@ -225,7 +225,7 @@ form.addEventListener("submit", async (e) => {
       title: "Outfit Submitted for Review ⏳",
       message: `Your outfit "${title}" has been submitted for admin verification. Once verified, it will go live on the Rent Clothes marketplace!`,
       type: "info",
-      relatedId: docRef.id,
+      relatedId: itemDocId,
       emailSubject: `Listing Submitted for Review: ${title}`
     });
 
