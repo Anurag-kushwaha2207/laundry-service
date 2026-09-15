@@ -2878,8 +2878,316 @@ body{
   color: #94a3b8;
   font-size: 14px;
 }
+/* =========================================================
+   AADI UI ENHANCEMENTS
+   ========================================================= */
+
+/* ---------- 3D FLOATING BACKGROUND ---------- */
+
+body {
+  position: relative;
+  overflow-x: hidden;
+}
+
+.background-3d {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.navbar,
+.service-marquee,
+.hero,
+section,
+footer {
+  position: relative;
+  z-index: 1;
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle at 28% 22%,
+      rgba(255,255,255,0.95) 0%,
+      rgba(255,255,255,0.45) 8%,
+      rgba(125,211,252,0.28) 30%,
+      rgba(99,102,241,0.20) 55%,
+      rgba(255,255,255,0.05) 70%,
+      transparent 75%
+    );
+
+  border: 1px solid rgba(255,255,255,0.55);
+
+  box-shadow:
+    inset -12px -12px 25px rgba(59,130,246,0.15),
+    inset 8px 8px 15px rgba(255,255,255,0.35),
+    0 12px 35px rgba(37,99,235,0.20);
+
+  backdrop-filter: blur(3px);
+
+  opacity: 0.75;
+  will-change: transform;
+}
+
+/* Bubble positions + animations */
+
+.bubble-1 {
+  width: 90px;
+  height: 90px;
+  top: 18%;
+  left: 5%;
+  animation: bubbleFloat1 8s ease-in-out infinite;
+}
+
+.bubble-2 {
+  width: 55px;
+  height: 55px;
+  top: 32%;
+  right: 9%;
+  animation: bubbleFloat2 7s ease-in-out infinite;
+}
+
+.bubble-3 {
+  width: 75px;
+  height: 75px;
+  top: 62%;
+  left: 10%;
+  animation: bubbleFloat1 10s ease-in-out infinite;
+}
+
+.bubble-4 {
+  width: 45px;
+  height: 45px;
+  top: 72%;
+  right: 18%;
+  animation: bubbleFloat2 8s ease-in-out infinite;
+}
+
+.bubble-5 {
+  width: 110px;
+  height: 110px;
+  top: 48%;
+  right: -30px;
+  animation: bubbleFloat1 11s ease-in-out infinite;
+}
+
+.bubble-6 {
+  width: 38px;
+  height: 38px;
+  top: 12%;
+  right: 28%;
+  animation: bubbleFloat2 6s ease-in-out infinite;
+}
+
+
+/* ---------- BUBBLE ANIMATIONS ---------- */
+
+@keyframes bubbleFloat1 {
+  0% {
+    transform: translate3d(0, 30px, 0) scale(0.95);
+  }
+
+  25% {
+    transform: translate3d(35px, -20px, 0) scale(1.05);
+  }
+
+  50% {
+    transform: translate3d(-20px, -65px, 0) scale(1.1);
+  }
+
+  75% {
+    transform: translate3d(-45px, -25px, 0) scale(1.03);
+  }
+
+  100% {
+    transform: translate3d(0, 30px, 0) scale(0.95);
+  }
+}
+
+@keyframes bubbleFloat2 {
+  0% {
+    transform: translate3d(0, -20px, 0) scale(1);
+  }
+
+  25% {
+    transform: translate3d(-30px, 25px, 0) scale(1.08);
+  }
+
+  50% {
+    transform: translate3d(25px, 65px, 0) scale(0.92);
+  }
+
+  75% {
+    transform: translate3d(45px, 10px, 0) scale(1.05);
+  }
+
+  100% {
+    transform: translate3d(0, -20px, 0) scale(1);
+  }
+}
+
+/* ---------- MOVING MARQUEE ---------- */
+
+.service-marquee {
+  width: 100%;
+  overflow: hidden;
+
+  background: linear-gradient(
+    90deg,
+    #071a3d,
+    #0b2d66,
+    #123f85,
+    #0b2d66,
+    #071a3d
+  );
+
+  border-bottom: 1px solid rgba(96,165,250,0.5);
+
+  box-shadow:
+    0 4px 18px rgba(15,23,42,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+
+  position: relative;
+  z-index: 900;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  gap: 24px;
+  padding: 10px 0;
+  white-space: nowrap;
+  animation: marqueeMove 22s linear infinite;
+}
+
+.marquee-track span {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 0 10px rgba(147,197,253,0.7);
+}
+
+@keyframes marqueeMove {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+
+/* ---------- DARK MODE BUTTON ---------- */
+
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  margin-right: 12px;
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 50%;
+  background: #f0f9ff;
+  color: #2563eb;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.3s ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-2px) rotate(8deg);
+}
+
+
+/* ---------- DARK MODE ---------- */
+
+body.dark-mode {
+  background: #07111f;
+  color: #e5eefc;
+}
+
+body.dark-mode .navbar {
+  background: #0b1728;
+}
+
+body.dark-mode .nav-links a {
+  color: #e5eefc;
+}
+
+body.dark-mode .nav-links a:hover,
+body.dark-mode .nav-links a.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+body.dark-mode .username {
+  background: #172a46;
+  color: #e5eefc;
+}
+
+body.dark-mode .theme-toggle {
+  background: #172a46;
+  color: #facc15;
+  border-color: rgba(255,255,255,0.12);
+}
+
+body.dark-mode .hero {
+  background:
+    radial-gradient(
+      circle at 75% 30%,
+      rgba(37,99,235,0.20),
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      #07111f,
+      #0d1b30
+    );
+}
+
+body.dark-mode .hero-text h1 {
+  color: #f1f5f9;
+}
+
+body.dark-mode .hero-text p {
+  color: #b8c7dc;
+}
+
+body.dark-mode .service-marquee {
+  background: linear-gradient(
+    90deg,
+    #0c2340,
+    #111d3b,
+    #10283c
+  );
+}
+
+body.dark-mode .marquee-track span {
+  color: #93c5fd;
+}
+
+body.dark-mode .bubble {
+  background: radial-gradient(
+    circle at 30% 25%,
+    rgba(255,255,255,0.55),
+    rgba(96,165,250,0.38) 35%,
+    rgba(129,140,248,0.18) 65%,
+    transparent 72%
+  );
+
+  box-shadow:
+    inset -8px -8px 18px rgba(96,165,250,0.12),
+    0 10px 35px rgba(59,130,246,0.18);
+}
 
 
 
 
-

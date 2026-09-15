@@ -46,6 +46,16 @@
 
 <body>
 
+  <!-- ================= 3D BACKGROUND EFFECTS ================= -->
+<div class="background-3d" aria-hidden="true">
+  <span class="bubble bubble-1"></span>
+  <span class="bubble bubble-2"></span>
+  <span class="bubble bubble-3"></span>
+  <span class="bubble bubble-4"></span>
+  <span class="bubble bubble-5"></span>
+  <span class="bubble bubble-6"></span>
+</div>
+
   <!-- ================= NAVBAR ================= -->
   <nav class="navbar">
     <div class="nav-left">
@@ -66,9 +76,32 @@
     </ul>
 
     <div class="nav-right">
+      <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
       <div class="username" id="navUsername" onclick="handleUsernameClick()" style="cursor: pointer;">Username</div>
     </div>
   </nav>
+  <!-- ================= MOVING SERVICE MARQUEE ================= -->
+<div class="service-marquee">
+  <div class="marquee-track">
+    <span>Fresh Clothes</span>
+    <span>•</span>
+    <span>Premium Care</span>
+    <span>•</span>
+    <span>Fast Delivery</span>
+    <span>•</span>
+    <span>Easy Booking</span>
+    <span>•</span>
+
+    <span>Fresh Clothes</span>
+    <span>•</span>
+    <span>Premium Care</span>
+    <span>•</span>
+    <span>Fast Delivery</span>
+    <span>•</span>
+    <span>Easy Booking</span>
+    <span>•</span>
+  </div>
+</div>
 
 
   <!-- ================= HERO ================= -->
@@ -524,6 +557,25 @@
       initNotificationCenter();
     });
   </script>
-</body>
+<script>
+  const themeToggle = document.getElementById("themeToggle");
 
+  themeToggle.addEventListener("click", function () {
+    document.body.classList.toggle("dark-mode");
+
+    if (document.body.classList.contains("dark-mode")) {
+      themeToggle.textContent = "☀️";
+      localStorage.setItem("laundry-theme", "dark");
+    } else {
+      themeToggle.textContent = "🌙";
+      localStorage.setItem("laundry-theme", "light");
+    }
+  });
+
+  if (localStorage.getItem("laundry-theme") === "dark") {
+    document.body.classList.add("dark-mode");
+    themeToggle.textContent = "☀️";
+  }
+</script>
+</body>
 </html>
