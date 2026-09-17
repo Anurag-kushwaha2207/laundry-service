@@ -650,8 +650,8 @@ async function handleAdvanceItemPickup(itemId, nextAction) {
 
 // Render Pickup & Delivery Tracking Tab with Dispatch Queues
 function renderTrackingTab() {
-  // 1. Approved items to collect from owner
-  const approvedItemsToPickup = allItems.filter(item => item.status === "approved" && (item.pickupStatus || "pending_pickup") !== "delivered_hub");
+  // 1. Approved items to collect from owner (keep items visible even after delivered_hub so they never vanish)
+  const approvedItemsToPickup = allItems.filter(item => item.status === "approved");
   
   // 2. Active customer rental bookings
   const activeList = activeBookings.filter(b => b.status && b.status !== "pending_payment" && b.status !== "cancelled");
@@ -669,24 +669,19 @@ function renderTrackingTab() {
     return;
   }
 
-  // Calculate Dispatch Stage Counts
-  // Stage 1: Owner Pickups (Approved Outfits pending pickup + Bookings confirmed for pickup)
+  // Calculate Dispatch Stage Counts across all 7 steps
   const countApprovedOwnerPickup = approvedItemsToPickup.filter(i => (i.pickupStatus || "pending_pickup") === "pending_pickup").length;
-  const countBookingOwnerPickup = activeList.filter(b => (b.status || "confirmed") === "confirmed").length;
+  const countBookingOwnerPickup = activeList.filter(b => (b.status || "confirmed") === "confirmed" || b.status === "pending_pickup").length;
   const countPickupOwner = countApprovedOwnerPickup + countBookingOwnerPickup;
 
-  // Stage 2: Hub Washing (Approved Outfits in transit to hub + Bookings in hub cleaning)
-  const countApprovedHub = approvedItemsToPickup.filter(i => i.pickupStatus === "picked_up").length;
-  const countBookingHub = activeList.filter(b => b.status === "picked_up_from_owner").length;
+  const countApprovedHub = approvedItemsToPickup.filter(i => i.pickupStatus === "picked_up" || i.pickupStatus === "delivered_hub").length;
+  const countBookingHub = activeList.filter(b => b.status === "picked_up_from_owner" || b.status === "cleaning_in_progress").length;
   const countHub = countApprovedHub + countBookingHub;
 
-  // Stage 3: Customer Delivery
-  const countDeliverCustomer = activeList.filter(b => b.status === "cleaning_in_progress").length;
+  const countDeliverCustomer = activeList.filter(b => b.status === "cleaning_in_progress" || b.status === "out_for_delivery" || b.status === "delivered_to_renter").length;
 
-  // Stage 4: Return from Customer
-  const countReturnCustomer = activeList.filter(b => b.status === "delivered_to_renter").length;
+  const countReturnCustomer = activeList.filter(b => b.status === "delivered_to_renter" || b.status === "picked_up_from_renter").length;
 
-  // Stage 5: Return to Owner & Settle
   const countReturnOwner = activeList.filter(b => b.status === "picked_up_from_renter" || b.status === "returned_to_owner").length;
 
   // Filter lists based on activeDispatchFilter
@@ -698,16 +693,16 @@ function renderTrackingTab() {
     displayBookings = activeList;
   } else if (activeDispatchFilter === "pickup_owner") {
     displayApprovedItems = approvedItemsToPickup.filter(i => (i.pickupStatus || "pending_pickup") === "pending_pickup");
-    displayBookings = activeList.filter(b => (b.status || "confirmed") === "confirmed");
+    displayBookings = activeList.filter(b => (b.status || "confirmed") === "confirmed" || b.status === "pending_pickup");
   } else if (activeDispatchFilter === "hub_cleaning") {
-    displayApprovedItems = approvedItemsToPickup.filter(i => i.pickupStatus === "picked_up");
-    displayBookings = activeList.filter(b => b.status === "picked_up_from_owner");
+    displayApprovedItems = approvedItemsToPickup.filter(i => i.pickupStatus === "picked_up" || i.pickupStatus === "delivered_hub");
+    displayBookings = activeList.filter(b => b.status === "picked_up_from_owner" || b.status === "cleaning_in_progress");
   } else if (activeDispatchFilter === "deliver_customer") {
     displayApprovedItems = [];
-    displayBookings = activeList.filter(b => b.status === "cleaning_in_progress");
+    displayBookings = activeList.filter(b => b.status === "cleaning_in_progress" || b.status === "out_for_delivery" || b.status === "delivered_to_renter");
   } else if (activeDispatchFilter === "return_customer") {
     displayApprovedItems = [];
-    displayBookings = activeList.filter(b => b.status === "delivered_to_renter");
+    displayBookings = activeList.filter(b => b.status === "delivered_to_renter" || b.status === "picked_up_from_renter");
   } else if (activeDispatchFilter === "return_owner") {
     displayApprovedItems = [];
     displayBookings = activeList.filter(b => b.status === "picked_up_from_renter" || b.status === "returned_to_owner");
@@ -731,7 +726,8 @@ function renderTrackingTab() {
       <div class="empty-admin-state" style="grid-column: 1 / -1;">
         <ion-icon name="checkmark-done-circle-outline"></ion-icon>
         <h3>No tasks in this dispatch queue</h3>
-        <p>All items in this stage have been processed or moved to the next step.</p>
+        <p>All items in this stage have been processed or moved to another step.</p>
+        <button type="button" onclick="document.querySelector('.dispatch-filter-btn[data-filter=\\'all\\']').click()" style="margin-top: 10px; background: #0284c7; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer;">Show All Tasks</button>
       </div>
     `;
   } else {
@@ -756,6 +752,16 @@ function renderTrackingTab() {
   // Attach stage advance event listeners for customer bookings
   document.querySelectorAll(".advance-stage-btn").forEach(btn => {
     btn.addEventListener("click", () => handleAdvanceTrackingStage(btn.dataset.id, btn.dataset.nextstage, btn.dataset.title));
+  });
+
+  // Attach direct stage selector dropdown listeners
+  document.querySelectorAll(".direct-stage-select").forEach(sel => {
+    sel.addEventListener("change", () => {
+      const bookingId = sel.dataset.id;
+      const targetStage = sel.value;
+      const title = decodeURIComponent(sel.dataset.title || 'Outfit');
+      handleAdvanceTrackingStage(bookingId, targetStage, title);
+    });
   });
 
   // Attach deposit settlement event listeners
@@ -967,15 +973,23 @@ function createTrackingCard(b) {
   const stages = [
     { key: "confirmed", label: "1. Confirmed", icon: "checkmark-circle-outline" },
     { key: "picked_up_from_owner", label: "2. Owner Pickup", icon: "cube-outline" },
-    { key: "cleaning_in_progress", label: "3. Laundry Cleaned", icon: "sparkles-outline" },
-    { key: "delivered_to_renter", label: "4. Delivered to Renter", icon: "home-outline" },
-    { key: "picked_up_from_renter", label: "5. Return Pickup", icon: "return-down-back-outline" },
-    { key: "returned_to_owner", label: "6. Returned & Settled", icon: "ribbon-outline" }
+    { key: "cleaning_in_progress", label: "3. Washing Hub", icon: "sparkles-outline" },
+    { key: "out_for_delivery", label: "4. Out for Delivery", icon: "bicycle-outline" },
+    { key: "delivered_to_renter", label: "5. Delivered to Renter", icon: "home-outline" },
+    { key: "picked_up_from_renter", label: "6. Return Pickup", icon: "return-down-back-outline" },
+    { key: "returned_to_owner", label: "7. Returned & Settled", icon: "ribbon-outline" }
   ];
 
-  const currentIdx = stages.findIndex(s => s.key === (b.status || "confirmed"));
+  let rawStatus = (b.status || "confirmed").toLowerCase();
+  if (rawStatus === "hub_cleaning") rawStatus = "cleaning_in_progress";
+  if (rawStatus === "delivered_to_customer") rawStatus = "delivered_to_renter";
+  if (rawStatus === "return_to_hub") rawStatus = "picked_up_from_renter";
+  if (rawStatus === "completed") rawStatus = "returned_to_owner";
+
+  let currentIdx = stages.findIndex(s => s.key === rawStatus);
+  if (currentIdx === -1) currentIdx = 0; // Steps will NEVER vanish!
   const nextStage = currentIdx < stages.length - 1 ? stages[currentIdx + 1] : null;
-  const currentStageLabel = currentIdx >= 0 ? stages[currentIdx].label : (b.status || "Confirmed");
+  const currentStageLabel = stages[currentIdx].label;
 
   const renterCleanPhone = (b.renterPhone || "").replace(/[^0-9]/g, "");
   const ownerCleanPhone = (b.ownerPhone || "").replace(/[^0-9]/g, "");
@@ -1142,23 +1156,32 @@ function createTrackingCard(b) {
         `}
       </div>
 
-      <!-- Stage Timeline Progress Bar -->
+      <!-- Stage Timeline Progress Bar (7 Standard Stages) -->
       <div class="stage-timeline">
         ${stages.map((s, idx) => `
-          <div class="timeline-step ${idx <= currentIdx ? 'completed' : ''}">
+          <div class="timeline-step ${idx <= currentIdx ? 'completed' : ''}" style="cursor: pointer;" title="Set stage to: ${s.label}">
             <div class="step-icon"><ion-icon name="${s.icon}"></ion-icon></div>
             <span class="step-label">${s.label}</span>
           </div>
         `).join("")}
       </div>
 
-      <div class="tracking-actions" style="margin-top: 15px; display: flex; justify-content: flex-end;">
+      <div class="tracking-actions" style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-size: 12.5px; font-weight: 700; color: #475569;">Stage Selector:</label>
+          <select class="direct-stage-select" data-id="${b.id}" data-title="${encodeURIComponent(b.itemTitle || 'Outfit')}" style="padding: 7px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; background: #fff; cursor: pointer;">
+            ${stages.map((s, idx) => `
+              <option value="${s.key}" ${idx === currentIdx ? 'selected' : ''}>${s.label}</option>
+            `).join("")}
+          </select>
+        </div>
+
         ${nextStage ? `
-          <button class="action-btn approve-btn advance-stage-btn" data-id="${b.id}" data-nextstage="${nextStage.key}" data-title="${b.itemTitle || 'Outfit'}" style="background: #0284c7; color: #fff; padding: 10px 20px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; border: none; display: flex; align-items: center; gap: 8px;">
+          <button class="action-btn approve-btn advance-stage-btn" data-id="${b.id}" data-nextstage="${nextStage.key}" data-title="${encodeURIComponent(b.itemTitle || 'Outfit')}" style="background: #0284c7; color: #fff; padding: 10px 22px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);">
             <ion-icon name="arrow-forward-circle-outline" style="font-size: 20px;"></ion-icon> Advance Order to: ${nextStage.label}
           </button>
         ` : `
-          <span class="completed-banner" style="font-size: 15px; padding: 10px 20px;">🎉 Rental Order Lifecycle Fully Completed & Settled!</span>
+          <span class="completed-banner" style="font-size: 14px; padding: 10px 20px; border-radius: 8px;">🎉 Rental Order Lifecycle Fully Completed & Settled!</span>
         `}
       </div>
     </div>
@@ -1304,13 +1327,15 @@ async function handleAdvanceTrackingStage(bookingId, nextStage, itemTitle) {
 
     const b = activeBookings.find(x => x.id === bookingId) || {};
 
-    // Friendly milestone mappings and rich metadata
+    // Friendly milestone mappings and rich metadata (7 Standard Stages)
     const stageTitles = {
-      "picked_up_from_owner": { step: 1, title: "Stage 1: Picked Up from Owner", summary: "Outfit collected from owner and in transit to laundry hub" },
-      "cleaning_in_progress": { step: 2, title: "Stage 2: Cleaning & Sanitization", summary: "Outfit undergoing professional laundry & sanitization at hub" },
-      "delivered_to_renter": { step: 3, title: "Stage 3: Delivered to Renter", summary: "Outfit delivered cleanly to customer doorstep" },
-      "picked_up_from_renter": { step: 4, title: "Stage 4: Return Picked from Renter", summary: "Outfit collected back from customer after rental period" },
-      "returned_to_owner": { step: 5, title: "Stage 5: Returned to Owner", summary: "Order complete. Outfit inspected and returned to owner" }
+      "confirmed": { step: 1, title: "Stage 1: Confirmed", summary: "Rental order confirmed and queued for pickup" },
+      "picked_up_from_owner": { step: 2, title: "Stage 2: Picked Up from Owner", summary: "Outfit collected from owner and in transit to laundry hub" },
+      "cleaning_in_progress": { step: 3, title: "Stage 3: Washing Hub (Sanitizing)", summary: "Outfit undergoing professional laundry & sanitization at hub" },
+      "out_for_delivery": { step: 4, title: "Stage 4: Out for Delivery", summary: "Rider on the way to deliver freshly sanitized outfit to customer doorstep" },
+      "delivered_to_renter": { step: 5, title: "Stage 5: Delivered to Renter", summary: "Outfit delivered cleanly to customer doorstep and currently in use" },
+      "picked_up_from_renter": { step: 6, title: "Stage 6: Return Picked from Renter", summary: "Outfit collected back from customer after rental period" },
+      "returned_to_owner": { step: 7, title: "Stage 7: Returned to Owner", summary: "Order complete. Outfit inspected and returned to owner" }
     };
     const meta = stageTitles[nextStage] || { step: 1, title: nextStage, summary: "Status update" };
     const logDocId = generateLogDocId(bookingId, nextStage, meta.step);
@@ -1333,10 +1358,12 @@ async function handleAdvanceTrackingStage(bookingId, nextStage, itemTitle) {
       timestamp: serverTimestamp()
     });
 
-    // Friendly milestone message mappings
+    // Friendly milestone message mappings for 7 stages
     const stageMessages = {
+      "confirmed": "Your rental order has been confirmed! We are scheduling pickup.",
       "picked_up_from_owner": "Our delivery executive has picked up your outfit from the owner and is heading to our cleaning hub.",
       "cleaning_in_progress": "Your outfit has arrived at our laundry center and is currently undergoing professional dry-cleaning & sanitization.",
+      "out_for_delivery": "Your sanitized outfit is out for delivery! Our rider is on the way to your doorstep.",
       "delivered_to_renter": "Your outfit has been delivered to your doorstep! Enjoy your rental period.",
       "picked_up_from_renter": "Our delivery executive has picked up your returned outfit and is returning it for inspection.",
       "returned_to_owner": "Your rental order lifecycle is complete! Thank you for using Laundry & Rentals."

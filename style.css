@@ -51,7 +51,7 @@ body{
   background:#ffffff;
   position:sticky;
   top:0;
-  z-index:1000;
+  z-index:99999;
   box-shadow:0 4px 12px rgba(0,0,0,0.06);
 }
 
@@ -2468,16 +2468,17 @@ body{
   justify-content: space-between;
   position: relative;
   margin: 25px 0;
-  padding: 0 10px;
+  padding: 0 5px;
+  overflow-x: auto;
 }
 
 .stage-timeline::before {
   content: '';
   position: absolute;
-  top: 20px;
-  left: 30px;
-  right: 30px;
-  height: 4px;
+  top: 18px;
+  left: 25px;
+  right: 25px;
+  height: 3px;
   background: #e2e8f0;
   z-index: 1;
 }
@@ -2489,28 +2490,30 @@ body{
   flex-direction: column;
   align-items: center;
   flex: 1;
+  min-width: 70px;
 }
 
 .step-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: #ffffff;
-  border: 3px solid #cbd5e1;
+  border: 2.5px solid #cbd5e1;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 18px;
   color: #64748b;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   transition: all 0.3s ease;
 }
 
 .step-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #64748b;
   text-align: center;
+  line-height: 1.25;
 }
 
 .timeline-step.completed .step-icon {
@@ -2897,7 +2900,6 @@ body {
   z-index: 0;
 }
 
-.navbar,
 .service-marquee,
 .hero,
 section,
@@ -3053,7 +3055,7 @@ footer {
     inset 0 1px 0 rgba(255,255,255,0.15);
 
   position: relative;
-  z-index: 900;
+  z-index: 10;
 }
 
 .marquee-track {
