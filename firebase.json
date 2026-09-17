@@ -3,6 +3,7 @@
     "rules": "firestore.rules"
   },
   "hosting": {
+    "site": "laundryservices-b99f1",
     "public": ".",
     "ignore": [
       "firebase.json",
