@@ -216,10 +216,10 @@ function updateCounts() {
   const approved = allItems.filter(item => item.status === "approved").length;
   const rejected = allItems.filter(item => item.status === "rejected").length;
   
-  // Tracking includes both: Approved outfits pending pickup from owner + Active customer rental bookings
-  const approvedPickups = allItems.filter(item => item.status === "approved" && (item.pickupStatus || "pending_pickup") !== "delivered_hub").length;
+  // Tracking includes all approved outfits currently in the 5-step dispatch lifecycle + active customer rental bookings
+  const trackingItems = allItems.filter(item => item.status === "approved" && (item.pickupStatus || "pending_pickup") !== "completed");
   const activeBookingsCount = activeBookings.filter(b => b.status && b.status !== "pending_payment" && b.status !== "cancelled").length;
-  const tracking = activeBookingsCount + approvedPickups;
+  const tracking = trackingItems.length + activeBookingsCount;
 
   const complaints = allComplaints.filter(c => c.status !== "resolved").length;
 
@@ -471,7 +471,47 @@ async function handleDeleteItem(itemId) {
   }
 }
 
-// Create Pickup Card for Approved Items to be collected from Owners by Delivery Executive
+// Helper: Determine dispatch step (1 to 5) for approved rental outfits
+function getItemDispatchStep(item) {
+  const s = (item.pickupStatus || "pending_pickup").toLowerCase();
+  if (s === "pending_pickup") return 1; // 1. To Pick Up from Owner
+  if (s === "picked_up" || s === "delivered_hub" || s === "at_hub" || s === "washing_hub" || s === "cleaning_in_progress") return 2; // 2. Washing Hub
+  if (s === "ready_for_delivery" || s === "ready_delivery" || s === "out_for_delivery") return 3; // 3. Deliver to Customer
+  if (s === "delivered_to_customer" || s === "delivered_customer" || s === "in_use" || s === "return_due") return 4; // 4. Return Pickup
+  if (s === "return_picked_up" || s === "in_transit_owner" || s === "return_owner" || s === "returned_to_owner" || s === "completed") return 5; // 5. Return to Owner
+  return 1;
+}
+
+// Helper: Determine dispatch step (1 to 5) for rental bookings
+function getBookingDispatchStep(b) {
+  const s = (b.status || "confirmed").toLowerCase();
+  if (s === "confirmed" || s === "pending_pickup") return 1; // 1. To Pick Up from Owner
+  if (s === "picked_up_from_owner" || s === "cleaning_in_progress" || s === "hub_cleaning") return 2; // 2. Washing Hub
+  if (s === "out_for_delivery" || s === "ready_delivery" || s === "ready_for_delivery") return 3; // 3. Deliver to Customer
+  if (s === "delivered_to_renter" || s === "delivered_to_customer" || s === "return_due" || s === "in_use") return 4; // 4. Return Pickup
+  if (s === "picked_up_from_renter" || s === "return_to_hub" || s === "returned_to_owner" || s === "completed" || s === "settled") return 5; // 5. Return to Owner
+  return 1;
+}
+
+// Helper: Calculate or format Return Date string
+function getFormattedReturnDate(itemOrBooking) {
+  if (itemOrBooking.endDate) {
+    return itemOrBooking.endDate;
+  }
+  if (itemOrBooking.returnScheduledDate) {
+    return itemOrBooking.returnScheduledDate;
+  }
+  if (itemOrBooking.returnDate) {
+    return itemOrBooking.returnDate;
+  }
+  const base = (itemOrBooking.deliveredAt && itemOrBooking.deliveredAt.seconds) 
+    ? new Date(itemOrBooking.deliveredAt.seconds * 1000) 
+    : new Date();
+  base.setDate(base.getDate() + 3);
+  return base.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// Create Tracking Card for Approved Items across all 5 Dispatch Steps
 function createApprovedItemPickupCard(item) {
   const cleanPhone = (item.ownerPhone || "").replace(/[^0-9]/g, "");
   const fullAddress = `${item.ownerStreetAddress || 'Address on file'}${item.ownerStreetAddress ? ', ' : ''}${item.city || 'India'}`;
@@ -479,37 +519,50 @@ function createApprovedItemPickupCard(item) {
     ? `https://www.google.com/maps/search/?api=1&query=${item.ownerLat},${item.ownerLng}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
 
-  const isPickedUp = item.pickupStatus === "picked_up";
-  const isDeliveredHub = item.pickupStatus === "delivered_hub";
-  
-  let statusLabel = "Pending Owner Pickup";
-  let badgeColor = "#f59e0b";
-  let badgeBg = "#fef3c7";
-  let badgeIcon = "time-outline";
+  const currentStep = getItemDispatchStep(item);
+  const returnDateFormatted = getFormattedReturnDate(item);
 
-  if (isPickedUp) {
-    statusLabel = "Picked Up - In Transit to Hub";
+  // Status Badge configurations based on current step
+  let statusLabel = "1. Pending Owner Pickup";
+  let badgeColor = "#d97706";
+  let badgeBg = "#fef3c7";
+  let badgeIcon = "cube-outline";
+
+  if (currentStep === 2) {
+    statusLabel = "2. Washing Hub (Sanitizing & Pressing)";
     badgeColor = "#0284c7";
     badgeBg = "#e0f2fe";
-    badgeIcon = "car-sport-outline";
-  } else if (isDeliveredHub) {
-    statusLabel = "At Cleaning Hub (Ready for Rent)";
+    badgeIcon = "sparkles-outline";
+  } else if (currentStep === 3) {
+    statusLabel = "3. Out for Customer Delivery";
     badgeColor = "#16a34a";
     badgeBg = "#dcfce7";
-    badgeIcon = "sparkles-outline";
+    badgeIcon = "bicycle-outline";
+  } else if (currentStep === 4) {
+    statusLabel = "4. In Use / Return Due from Customer";
+    badgeColor = "#7c3aed";
+    badgeBg = "#f3e8ff";
+    badgeIcon = "return-down-back-outline";
+  } else if (currentStep === 5) {
+    statusLabel = (item.pickupStatus === "returned_to_owner" || item.pickupStatus === "completed") 
+      ? "5. Returned to Owner (Completed)" 
+      : "5. In Transit - Returning to Owner";
+    badgeColor = "#ea580c";
+    badgeBg = "#ffedd5";
+    badgeIcon = "home-outline";
   }
 
-  const waMsg = encodeURIComponent(`Hello ${item.ownerName || 'Partner'}! Our Laundry & Rentals delivery executive is heading to your address (${fullAddress}) to pick up your approved outfit "${item.title}".`);
+  const waMsg = encodeURIComponent(`Hello ${item.ownerName || 'Partner'}! Update regarding your approved outfit "${item.title}": Status is [${statusLabel}]. Address: ${fullAddress}.`);
 
   return `
-    <div class="tracking-card" style="border-top: 4px solid ${badgeColor}; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px;">
+    <div class="tracking-card" style="border-top: 4px solid ${badgeColor}; box-shadow: 0 4px 14px rgba(0,0,0,0.06); margin-bottom: 20px; border-radius: 12px; background: #fff;">
       <div class="tracking-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
         <div style="display: flex; gap: 14px; align-items: center;">
-          ${(item.images && item.images.length > 0) ? `<img src="${item.images[0]}" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover; border: 1px solid #e2e8f0;">` : ''}
+          ${(item.images && item.images.length > 0) ? `<img src="${item.images[0]}" style="width: 62px; height: 62px; border-radius: 8px; object-fit: cover; border: 1px solid #e2e8f0;">` : ''}
           <div>
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <h3 style="margin: 0; font-size: 18px; color: #0f172a;">${item.title}</h3>
-              <span style="background: #e0f2fe; color: #0369a1; padding: 2px 9px; border-radius: 12px; font-size: 11.5px; font-weight: 700;">Approved Listing</span>
+              <span style="background: #e0f2fe; color: #0369a1; padding: 3px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 700;">Approved Listing</span>
             </div>
             <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
               <span>Category: <strong>${item.category || 'Outfit'}</strong></span> | 
@@ -524,7 +577,75 @@ function createApprovedItemPickupCard(item) {
         </span>
       </div>
 
-      <!-- Owner Contact & Pickup Address for Delivery Boy -->
+      <!-- 5-Step Visual Progress Timeline in Sequence -->
+      <div class="stage-timeline" style="display: flex; align-items: center; justify-content: space-between; margin: 16px 0; padding: 12px 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; overflow-x: auto; gap: 8px;">
+        <div class="timeline-step ${currentStep >= 1 ? 'completed' : ''} ${currentStep === 1 ? 'active' : ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 85px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: ${currentStep > 1 ? '#22c55e' : (currentStep === 1 ? '#0284c7' : '#e2e8f0')}; color: ${currentStep >= 1 ? '#fff' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 4px; font-weight: 700;">
+            ${currentStep > 1 ? '✓' : '1'}
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: ${currentStep === 1 ? '#0284c7' : (currentStep > 1 ? '#15803d' : '#94a3b8')};">1. Owner Pickup</span>
+        </div>
+
+        <div style="height: 2px; flex: 0.5; background: ${currentStep > 1 ? '#22c55e' : '#cbd5e1'}; min-width: 15px;"></div>
+
+        <div class="timeline-step ${currentStep >= 2 ? 'completed' : ''} ${currentStep === 2 ? 'active' : ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 85px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: ${currentStep > 2 ? '#22c55e' : (currentStep === 2 ? '#0284c7' : '#e2e8f0')}; color: ${currentStep >= 2 ? '#fff' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 4px; font-weight: 700;">
+            ${currentStep > 2 ? '✓' : '2'}
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: ${currentStep === 2 ? '#0284c7' : (currentStep > 2 ? '#15803d' : '#94a3b8')};">2. Washing Hub</span>
+        </div>
+
+        <div style="height: 2px; flex: 0.5; background: ${currentStep > 2 ? '#22c55e' : '#cbd5e1'}; min-width: 15px;"></div>
+
+        <div class="timeline-step ${currentStep >= 3 ? 'completed' : ''} ${currentStep === 3 ? 'active' : ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 85px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: ${currentStep > 3 ? '#22c55e' : (currentStep === 3 ? '#0284c7' : '#e2e8f0')}; color: ${currentStep >= 3 ? '#fff' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 4px; font-weight: 700;">
+            ${currentStep > 3 ? '✓' : '3'}
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: ${currentStep === 3 ? '#0284c7' : (currentStep > 3 ? '#15803d' : '#94a3b8')};">3. Deliver Customer</span>
+        </div>
+
+        <div style="height: 2px; flex: 0.5; background: ${currentStep > 3 ? '#22c55e' : '#cbd5e1'}; min-width: 15px;"></div>
+
+        <div class="timeline-step ${currentStep >= 4 ? 'completed' : ''} ${currentStep === 4 ? 'active' : ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 85px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: ${currentStep > 4 ? '#22c55e' : (currentStep === 4 ? '#0284c7' : '#e2e8f0')}; color: ${currentStep >= 4 ? '#fff' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 4px; font-weight: 700;">
+            ${currentStep > 4 ? '✓' : '4'}
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: ${currentStep === 4 ? '#0284c7' : (currentStep > 4 ? '#15803d' : '#94a3b8')};">4. Return Pickup</span>
+        </div>
+
+        <div style="height: 2px; flex: 0.5; background: ${currentStep > 4 ? '#22c55e' : '#cbd5e1'}; min-width: 15px;"></div>
+
+        <div class="timeline-step ${currentStep >= 5 ? 'completed' : ''} ${currentStep === 5 ? 'active' : ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 85px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: ${(item.pickupStatus === 'returned_to_owner' || item.pickupStatus === 'completed') ? '#22c55e' : (currentStep === 5 ? '#ea580c' : '#e2e8f0')}; color: ${currentStep >= 5 ? '#fff' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 4px; font-weight: 700;">
+            ${(item.pickupStatus === 'returned_to_owner' || item.pickupStatus === 'completed') ? '✓' : '5'}
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: ${currentStep === 5 ? '#ea580c' : '#94a3b8'};">5. Return Owner</span>
+        </div>
+      </div>
+
+      <!-- Prominent Scheduled Return Date Box (Shown for Step 3, 4, 5 in Sequence) -->
+      ${(currentStep >= 3) ? `
+        <div style="background: linear-gradient(135deg, #eff6ff, #f0fdf4); border: 1.5px solid #3b82f6; border-radius: 10px; padding: 12px 16px; margin: 14px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="background: #2563eb; color: #fff; width: 42px; height: 42px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+              <ion-icon name="calendar-outline"></ion-icon>
+            </div>
+            <div>
+              <div style="font-size: 11.5px; font-weight: 800; color: #1d4ed8; text-transform: uppercase; letter-spacing: 0.5px;">
+                📅 Scheduled Return Pickup Date / वापसी पिकअप की तारीख
+              </div>
+              <div style="font-size: 17px; font-weight: 800; color: #0f172a; margin-top: 2px;">
+                ${returnDateFormatted}
+              </div>
+            </div>
+          </div>
+          <span style="background: #dbeafe; color: #1e40af; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;">
+            <ion-icon name="time-outline"></ion-icon> Return in Sequence
+          </span>
+        </div>
+      ` : ''}
+
+      <!-- Owner Contact & Logistics Details for Delivery Boy -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 16px 0; background: #f8fafc; padding: 14px; border-radius: 10px; border: 1px solid #e2e8f0;">
         <div>
           <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
@@ -538,7 +659,7 @@ function createApprovedItemPickupCard(item) {
 
         <div>
           <div style="font-size: 11.5px; font-weight: 700; color: #0284c7; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
-            <ion-icon name="location-outline"></ion-icon> Pickup Address (Delivery Target)
+            <ion-icon name="location-outline"></ion-icon> ${currentStep >= 5 ? 'Owner Return Destination' : (currentStep >= 3 ? 'Customer Delivery Target' : 'Pickup Address (Owner)')}
           </div>
           <div style="font-size: 13.5px; color: #1e293b; line-height: 1.4; font-weight: 500;">
             ${fullAddress}
@@ -564,53 +685,111 @@ function createApprovedItemPickupCard(item) {
         </a>
       </div>
 
-      <!-- Stage Update Button for Delivery Boy -->
-      <div style="border-top: 1px solid #f1f5f9; padding-top: 12px; display: flex; justify-content: flex-end; gap: 10px;">
-        ${!isPickedUp && !isDeliveredHub ? `
-          <button class="advance-item-pickup-btn" data-id="${item.id}" data-action="picked_up" style="background: #16a34a; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13.5px;">
+      <!-- Action Buttons to Advance through all 5 Steps -->
+      <div style="border-top: 1px solid #f1f5f9; padding-top: 12px; display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 10px;">
+        ${currentStep === 1 ? `
+          <button class="advance-item-pickup-btn" data-id="${item.id}" data-action="picked_up" data-nexttab="hub_cleaning" style="background: #16a34a; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13.5px;">
             <ion-icon name="checkmark-done-circle-outline"></ion-icon> ✅ Mark Picked Up from Owner
           </button>
-        ` : (isPickedUp ? `
-          <button class="advance-item-pickup-btn" data-id="${item.id}" data-action="delivered_hub" style="background: #0284c7; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13.5px;">
-            <ion-icon name="business-outline"></ion-icon> 🫧 Mark Arrived at Cleaning Hub
+        ` : currentStep === 2 ? `
+          <button class="advance-item-pickup-btn" data-id="${item.id}" data-action="ready_for_delivery" data-nexttab="deliver_customer" style="background: #0284c7; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13.5px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
+            <ion-icon name="sparkles-outline"></ion-icon> 🫧 Mark Cleaning Completed & Move to Customer Delivery
+          </button>
+        ` : currentStep === 3 ? `
+          <button class="advance-item-pickup-btn" data-id="${item.id}" data-action="delivered_to_customer" data-nexttab="return_customer" style="background: #15803d; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13.5px; box-shadow: 0 4px 12px rgba(21, 128, 61, 0.25);">
+            <ion-icon name="bicycle-outline"></ion-icon> 🚚 Mark Delivered to Customer Doorstep
+          </button>
+        ` : currentStep === 4 ? `
+          <button class="advance-item-pickup-btn" data-id="${item.id}" data-action="return_picked_up" data-nexttab="return_owner" style="background: #7c3aed; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13.5px; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);">
+            <ion-icon name="return-down-back-outline"></ion-icon> 🔄 Mark Return Picked Up from Customer
+          </button>
+        ` : (item.pickupStatus === "returned_to_owner" || item.pickupStatus === "completed") ? `
+          <span style="color: #16a34a; font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+            <ion-icon name="checkmark-done-circle" style="font-size: 20px;"></ion-icon> 🎉 Rental Cycle Fully Completed & Returned to Owner!
+          </span>
+          <button class="advance-item-pickup-btn" data-id="${item.id}" data-action="pending_pickup" data-nexttab="pickup_owner" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+            🔄 Re-queue for Next Rental
           </button>
         ` : `
-          <span style="color: #16a34a; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 5px;">
-            <ion-icon name="checkmark-circle"></ion-icon> Available at Hub for Customer Rentals
-          </span>
-        `)}
+          <button class="advance-item-pickup-btn" data-id="${item.id}" data-action="returned_to_owner" data-nexttab="return_owner" style="background: #ea580c; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13.5px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);">
+            <ion-icon name="home-outline"></ion-icon> 🏠 Mark Returned to Owner (Complete Cycle)
+          </button>
+        `}
       </div>
     </div>
   `;
 }
 
-// Handle Advancing Pickup for Approved Items
-async function handleAdvanceItemPickup(itemId, nextAction) {
+// Handle Advancing Pickup for Approved Items across all 5 Steps with Auto-Tab Switch
+async function handleAdvanceItemPickup(itemId, nextAction, nextTab) {
   try {
     const item = allItems.find(x => x.id === itemId);
     if (!item) return;
 
     const itemRef = doc(db, "rental_items", itemId);
-    await updateDoc(itemRef, {
+    const updatePayload = {
       pickupStatus: nextAction,
       pickupLastUpdated: serverTimestamp()
-    });
+    };
 
-    // Create structured log in pickup_delivery_logs
-    const stepNumber = nextAction === "picked_up" ? 1 : 2;
-    const stageName = nextAction === "picked_up" ? "picked_up_from_owner" : "cleaning_in_progress";
-    const stageTitle = nextAction === "picked_up" ? "Stage 1: Picked Up from Owner" : "Stage 2: Arrived at Laundry Hub";
+    // Calculate & set Return Date when delivered to customer
+    if (nextAction === "delivered_to_customer") {
+      updatePayload.deliveredAt = serverTimestamp();
+      const d = new Date();
+      d.setDate(d.getDate() + 3);
+      updatePayload.returnScheduledDate = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    } else if (nextAction === "returned_to_owner") {
+      updatePayload.completedAt = serverTimestamp();
+    }
+
+    await updateDoc(itemRef, updatePayload);
+
+    // Automatically switch active dispatch tab so item NEVER disappears from user view
+    if (nextTab) {
+      activeDispatchFilter = nextTab;
+    }
+
+    // Friendly milestone titles and logs
+    let stepNumber = 1;
+    let stageName = nextAction;
+    let stageTitle = "Stage 1: Picked Up from Owner";
+    let summaryText = `Outfit "${item.title}" stage updated to ${nextAction}`;
+
+    if (nextAction === "picked_up") {
+      stepNumber = 2;
+      stageName = "picked_up_from_owner";
+      stageTitle = "Stage 1: Picked Up from Owner";
+      summaryText = `Outfit "${item.title}" collected from owner and in transit to washing hub`;
+    } else if (nextAction === "ready_for_delivery") {
+      stepNumber = 3;
+      stageName = "cleaning_completed";
+      stageTitle = "Stage 2: Cleaning Completed at Hub";
+      summaryText = `Outfit "${item.title}" cleaned, pressed and ready for customer doorstep delivery`;
+    } else if (nextAction === "delivered_to_customer") {
+      stepNumber = 4;
+      stageName = "delivered_to_customer";
+      stageTitle = "Stage 3: Delivered to Customer";
+      summaryText = `Outfit "${item.title}" delivered to customer doorstep. Return scheduled in sequence.`;
+    } else if (nextAction === "return_picked_up") {
+      stepNumber = 5;
+      stageName = "return_picked_up";
+      stageTitle = "Stage 4: Return Picked Up from Customer";
+      summaryText = `Outfit "${item.title}" collected back from customer after rental period`;
+    } else if (nextAction === "returned_to_owner") {
+      stepNumber = 5;
+      stageName = "returned_to_owner";
+      stageTitle = "Stage 5: Returned to Owner";
+      summaryText = `Outfit "${item.title}" successfully returned to owner. Full rental cycle completed.`;
+    }
+
     const logId = generateLogDocId(itemId, stageName, stepNumber);
-
     await setDoc(doc(db, "pickup_delivery_logs", logId), {
       bookingId: itemId,
       bookingShortId: itemId.substring(0, 8),
       stage: stageName,
       stageNumber: stepNumber,
       stageTitle: stageTitle,
-      summary: nextAction === "picked_up" 
-        ? `Outfit "${item.title}" collected from owner by delivery executive` 
-        : `Outfit "${item.title}" received at laundry hub for cleaning & sanitization`,
+      summary: summaryText,
       itemTitle: item.title || "Outfit",
       customerName: "Marketplace Inventory",
       customerPhone: "",
@@ -623,40 +802,37 @@ async function handleAdvanceItemPickup(itemId, nextAction) {
 
     // Notify Owner
     if (item.ownerPhone || item.ownerEmail || item.ownerId) {
-      const msg = nextAction === "picked_up"
-        ? `Our delivery executive has picked up your outfit "${item.title}" from your address. It is now on the way to our laundry hub.`
-        : `Your outfit "${item.title}" has arrived at our laundry hub and is being cleaned & prepped for rental!`;
       sendNotification({
         recipientUid: item.ownerId || "",
         recipientEmail: item.ownerEmail || "",
         recipientPhone: item.ownerPhone || "",
         recipientName: item.ownerName || "Valued Owner",
-        title: nextAction === "picked_up" ? "Outfit Picked Up! 📦" : "Outfit at Cleaning Hub 🫧",
-        message: msg,
+        title: `Dispatch Update: ${item.title}`,
+        message: summaryText,
         type: "order_update",
         relatedId: itemId,
-        emailSubject: `Pickup Update: ${item.title}`
+        emailSubject: `Outfit Update: ${item.title}`
       });
     }
 
-    alert(nextAction === "picked_up" 
-      ? `✅ Outfit "${item.title}" marked as picked up from owner!` 
-      : `✅ Outfit "${item.title}" marked as received at hub!`);
+    // Refresh UI immediately
+    renderTrackingTab();
+    updateCounts();
   } catch (e) {
     console.error("Item pickup error:", e);
     alert("Error updating pickup status: " + e.message);
   }
 }
 
-// Render Pickup & Delivery Tracking Tab with Dispatch Queues
+// Render Pickup & Delivery Tracking Tab with 5 Distinct Dispatch Queues
 function renderTrackingTab() {
-  // 1. Approved items to collect from owner (keep items visible even after delivered_hub so they never vanish)
-  const approvedItemsToPickup = allItems.filter(item => item.status === "approved");
+  // 1. Approved items to collect from owner / dispatch
+  const approvedItems = allItems.filter(item => item.status === "approved");
   
   // 2. Active customer rental bookings
   const activeList = activeBookings.filter(b => b.status && b.status !== "pending_payment" && b.status !== "cancelled");
 
-  const totalTrackingCount = approvedItemsToPickup.length + activeList.length;
+  const totalTrackingCount = approvedItems.length + activeList.length;
 
   if (totalTrackingCount === 0) {
     itemsListEl.innerHTML = `
@@ -669,43 +845,35 @@ function renderTrackingTab() {
     return;
   }
 
-  // Calculate Dispatch Stage Counts across all 7 steps
-  const countApprovedOwnerPickup = approvedItemsToPickup.filter(i => (i.pickupStatus || "pending_pickup") === "pending_pickup").length;
-  const countBookingOwnerPickup = activeList.filter(b => (b.status || "confirmed") === "confirmed" || b.status === "pending_pickup").length;
-  const countPickupOwner = countApprovedOwnerPickup + countBookingOwnerPickup;
-
-  const countApprovedHub = approvedItemsToPickup.filter(i => i.pickupStatus === "picked_up" || i.pickupStatus === "delivered_hub").length;
-  const countBookingHub = activeList.filter(b => b.status === "picked_up_from_owner" || b.status === "cleaning_in_progress").length;
-  const countHub = countApprovedHub + countBookingHub;
-
-  const countDeliverCustomer = activeList.filter(b => b.status === "cleaning_in_progress" || b.status === "out_for_delivery" || b.status === "delivered_to_renter").length;
-
-  const countReturnCustomer = activeList.filter(b => b.status === "delivered_to_renter" || b.status === "picked_up_from_renter").length;
-
-  const countReturnOwner = activeList.filter(b => b.status === "picked_up_from_renter" || b.status === "returned_to_owner").length;
+  // Calculate Dispatch Stage Counts accurately across all 5 steps
+  const countPickupOwner = approvedItems.filter(i => getItemDispatchStep(i) === 1).length + activeList.filter(b => getBookingDispatchStep(b) === 1).length;
+  const countHub = approvedItems.filter(i => getItemDispatchStep(i) === 2).length + activeList.filter(b => getBookingDispatchStep(b) === 2).length;
+  const countDeliverCustomer = approvedItems.filter(i => getItemDispatchStep(i) === 3).length + activeList.filter(b => getBookingDispatchStep(b) === 3).length;
+  const countReturnCustomer = approvedItems.filter(i => getItemDispatchStep(i) === 4).length + activeList.filter(b => getBookingDispatchStep(b) === 4).length;
+  const countReturnOwner = approvedItems.filter(i => getItemDispatchStep(i) === 5).length + activeList.filter(b => getBookingDispatchStep(b) === 5).length;
 
   // Filter lists based on activeDispatchFilter
   let displayApprovedItems = [];
   let displayBookings = [];
 
   if (activeDispatchFilter === "all") {
-    displayApprovedItems = approvedItemsToPickup;
+    displayApprovedItems = approvedItems;
     displayBookings = activeList;
   } else if (activeDispatchFilter === "pickup_owner") {
-    displayApprovedItems = approvedItemsToPickup.filter(i => (i.pickupStatus || "pending_pickup") === "pending_pickup");
-    displayBookings = activeList.filter(b => (b.status || "confirmed") === "confirmed" || b.status === "pending_pickup");
+    displayApprovedItems = approvedItems.filter(i => getItemDispatchStep(i) === 1);
+    displayBookings = activeList.filter(b => getBookingDispatchStep(b) === 1);
   } else if (activeDispatchFilter === "hub_cleaning") {
-    displayApprovedItems = approvedItemsToPickup.filter(i => i.pickupStatus === "picked_up" || i.pickupStatus === "delivered_hub");
-    displayBookings = activeList.filter(b => b.status === "picked_up_from_owner" || b.status === "cleaning_in_progress");
+    displayApprovedItems = approvedItems.filter(i => getItemDispatchStep(i) === 2);
+    displayBookings = activeList.filter(b => getBookingDispatchStep(b) === 2);
   } else if (activeDispatchFilter === "deliver_customer") {
-    displayApprovedItems = [];
-    displayBookings = activeList.filter(b => b.status === "cleaning_in_progress" || b.status === "out_for_delivery" || b.status === "delivered_to_renter");
+    displayApprovedItems = approvedItems.filter(i => getItemDispatchStep(i) === 3);
+    displayBookings = activeList.filter(b => getBookingDispatchStep(b) === 3);
   } else if (activeDispatchFilter === "return_customer") {
-    displayApprovedItems = [];
-    displayBookings = activeList.filter(b => b.status === "delivered_to_renter" || b.status === "picked_up_from_renter");
+    displayApprovedItems = approvedItems.filter(i => getItemDispatchStep(i) === 4);
+    displayBookings = activeList.filter(b => getBookingDispatchStep(b) === 4);
   } else if (activeDispatchFilter === "return_owner") {
-    displayApprovedItems = [];
-    displayBookings = activeList.filter(b => b.status === "picked_up_from_renter" || b.status === "returned_to_owner");
+    displayApprovedItems = approvedItems.filter(i => getItemDispatchStep(i) === 5);
+    displayBookings = activeList.filter(b => getBookingDispatchStep(b) === 5);
   }
 
   const filterBarHtml = `
@@ -746,12 +914,12 @@ function renderTrackingTab() {
 
   // Attach approved item pickup advance listeners
   document.querySelectorAll(".advance-item-pickup-btn").forEach(btn => {
-    btn.addEventListener("click", () => handleAdvanceItemPickup(btn.dataset.id, btn.dataset.action));
+    btn.addEventListener("click", () => handleAdvanceItemPickup(btn.dataset.id, btn.dataset.action, btn.dataset.nexttab));
   });
 
   // Attach stage advance event listeners for customer bookings
   document.querySelectorAll(".advance-stage-btn").forEach(btn => {
-    btn.addEventListener("click", () => handleAdvanceTrackingStage(btn.dataset.id, btn.dataset.nextstage, btn.dataset.title));
+    btn.addEventListener("click", () => handleAdvanceTrackingStage(btn.dataset.id, btn.dataset.nextstage, btn.dataset.title, btn.dataset.nexttab));
   });
 
   // Attach direct stage selector dropdown listeners
@@ -969,27 +1137,21 @@ if (confirmSettlementBtn) {
 }
 
 // Create Tracking Card HTML with Modern Delivery App UI & Contact Actions
+// Create Tracking Card HTML with Modern Delivery App UI & Contact Actions
 function createTrackingCard(b) {
+  const currentStep = getBookingDispatchStep(b);
+  const returnDateFormatted = getFormattedReturnDate(b);
+
   const stages = [
-    { key: "confirmed", label: "1. Confirmed", icon: "checkmark-circle-outline" },
-    { key: "picked_up_from_owner", label: "2. Owner Pickup", icon: "cube-outline" },
-    { key: "cleaning_in_progress", label: "3. Washing Hub", icon: "sparkles-outline" },
-    { key: "out_for_delivery", label: "4. Out for Delivery", icon: "bicycle-outline" },
-    { key: "delivered_to_renter", label: "5. Delivered to Renter", icon: "home-outline" },
-    { key: "picked_up_from_renter", label: "6. Return Pickup", icon: "return-down-back-outline" },
-    { key: "returned_to_owner", label: "7. Returned & Settled", icon: "ribbon-outline" }
+    { step: 1, key: "confirmed", nextKey: "cleaning_in_progress", nextTab: "hub_cleaning", label: "1. Owner Pickup", icon: "cube-outline" },
+    { step: 2, key: "cleaning_in_progress", nextKey: "out_for_delivery", nextTab: "deliver_customer", label: "2. Washing Hub", icon: "sparkles-outline" },
+    { step: 3, key: "out_for_delivery", nextKey: "delivered_to_renter", nextTab: "return_customer", label: "3. Deliver Customer", icon: "bicycle-outline" },
+    { step: 4, key: "delivered_to_renter", nextKey: "picked_up_from_renter", nextTab: "return_owner", label: "4. Return Pickup", icon: "return-down-back-outline" },
+    { step: 5, key: "returned_to_owner", nextKey: "returned_to_owner", nextTab: "return_owner", label: "5. Return Owner", icon: "home-outline" }
   ];
 
-  let rawStatus = (b.status || "confirmed").toLowerCase();
-  if (rawStatus === "hub_cleaning") rawStatus = "cleaning_in_progress";
-  if (rawStatus === "delivered_to_customer") rawStatus = "delivered_to_renter";
-  if (rawStatus === "return_to_hub") rawStatus = "picked_up_from_renter";
-  if (rawStatus === "completed") rawStatus = "returned_to_owner";
-
-  let currentIdx = stages.findIndex(s => s.key === rawStatus);
-  if (currentIdx === -1) currentIdx = 0; // Steps will NEVER vanish!
-  const nextStage = currentIdx < stages.length - 1 ? stages[currentIdx + 1] : null;
-  const currentStageLabel = stages[currentIdx].label;
+  const currentStageConfig = stages[currentStep - 1] || stages[0];
+  const nextStageConfig = currentStep < stages.length ? stages[currentStep] : null;
 
   const renterCleanPhone = (b.renterPhone || "").replace(/[^0-9]/g, "");
   const ownerCleanPhone = (b.ownerPhone || "").replace(/[^0-9]/g, "");
@@ -1005,21 +1167,89 @@ function createTrackingCard(b) {
     ? `https://www.google.com/maps/search/?api=1&query=${b.ownerLat},${b.ownerLng}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ownerFullAddress)}`;
 
-  const customerWaMsg = encodeURIComponent(`Hello ${b.renterName || 'Customer'}! Update regarding your rental order #${b.id.substring(0, 6)} for "${b.itemTitle || 'Outfit'}": Status is [${currentStageLabel}]. Our delivery executive will reach your address: ${customerFullAddress}.`);
-  const ownerWaMsg = encodeURIComponent(`Hello ${b.ownerName || 'Owner'}! Update regarding rental booking #${b.id.substring(0, 6)} for your outfit "${b.itemTitle || 'Outfit'}": Status is [${currentStageLabel}].`);
+  const customerWaMsg = encodeURIComponent(`Hello ${b.renterName || 'Customer'}! Update regarding your rental order #${b.id.substring(0, 6)} for "${b.itemTitle || 'Outfit'}": Status is [${currentStageConfig.label}]. Address: ${customerFullAddress}.`);
+  const ownerWaMsg = encodeURIComponent(`Hello ${b.ownerName || 'Owner'}! Update regarding rental booking #${b.id.substring(0, 6)} for your outfit "${b.itemTitle || 'Outfit'}": Status is [${currentStageConfig.label}].`);
 
   return `
-    <div class="tracking-card">
-      <div class="tracking-card-header">
+    <div class="tracking-card" style="margin-bottom: 20px; border-radius: 12px; background: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.06);">
+      <div class="tracking-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
         <div style="display: flex; gap: 14px; align-items: center;">
-          ${b.itemImage ? `<img src="${b.itemImage}" style="width: 58px; height: 58px; border-radius: 8px; object-fit: cover; border: 1px solid #e2e8f0;">` : ''}
+          ${b.itemImage ? `<img src="${b.itemImage}" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover; border: 1px solid #e2e8f0;">` : ''}
           <div>
             <h3 style="margin: 0; font-size: 18px; color: #0f172a;">${b.itemTitle || 'Rental Outfit'}</h3>
             <span class="booking-id-tag">Order ID: <code>#${b.id.substring(0, 8).toUpperCase()}</code> &bull; ${b.startDate} to ${b.endDate} (${b.rentalDays || 1} days)</span>
           </div>
         </div>
-        <span class="status-badge badge-approved" style="font-size: 13px; padding: 6px 14px;">${currentStageLabel.toUpperCase()}</span>
+        <span class="status-badge badge-approved" style="font-size: 13px; padding: 6px 14px;">${currentStageConfig.label.toUpperCase()}</span>
       </div>
+
+      <!-- 5-Step Visual Progress Timeline in Sequence -->
+      <div class="stage-timeline" style="display: flex; align-items: center; justify-content: space-between; margin: 16px 0; padding: 12px 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; overflow-x: auto; gap: 8px;">
+        <div class="timeline-step ${currentStep >= 1 ? 'completed' : ''} ${currentStep === 1 ? 'active' : ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 85px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: ${currentStep > 1 ? '#22c55e' : (currentStep === 1 ? '#0284c7' : '#e2e8f0')}; color: ${currentStep >= 1 ? '#fff' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 4px; font-weight: 700;">
+            ${currentStep > 1 ? '✓' : '1'}
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: ${currentStep === 1 ? '#0284c7' : (currentStep > 1 ? '#15803d' : '#94a3b8')};">1. Owner Pickup</span>
+        </div>
+
+        <div style="height: 2px; flex: 0.5; background: ${currentStep > 1 ? '#22c55e' : '#cbd5e1'}; min-width: 15px;"></div>
+
+        <div class="timeline-step ${currentStep >= 2 ? 'completed' : ''} ${currentStep === 2 ? 'active' : ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 85px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: ${currentStep > 2 ? '#22c55e' : (currentStep === 2 ? '#0284c7' : '#e2e8f0')}; color: ${currentStep >= 2 ? '#fff' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 4px; font-weight: 700;">
+            ${currentStep > 2 ? '✓' : '2'}
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: ${currentStep === 2 ? '#0284c7' : (currentStep > 2 ? '#15803d' : '#94a3b8')};">2. Washing Hub</span>
+        </div>
+
+        <div style="height: 2px; flex: 0.5; background: ${currentStep > 2 ? '#22c55e' : '#cbd5e1'}; min-width: 15px;"></div>
+
+        <div class="timeline-step ${currentStep >= 3 ? 'completed' : ''} ${currentStep === 3 ? 'active' : ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 85px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: ${currentStep > 3 ? '#22c55e' : (currentStep === 3 ? '#0284c7' : '#e2e8f0')}; color: ${currentStep >= 3 ? '#fff' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 4px; font-weight: 700;">
+            ${currentStep > 3 ? '✓' : '3'}
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: ${currentStep === 3 ? '#0284c7' : (currentStep > 3 ? '#15803d' : '#94a3b8')};">3. Deliver Customer</span>
+        </div>
+
+        <div style="height: 2px; flex: 0.5; background: ${currentStep > 3 ? '#22c55e' : '#cbd5e1'}; min-width: 15px;"></div>
+
+        <div class="timeline-step ${currentStep >= 4 ? 'completed' : ''} ${currentStep === 4 ? 'active' : ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 85px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: ${currentStep > 4 ? '#22c55e' : (currentStep === 4 ? '#0284c7' : '#e2e8f0')}; color: ${currentStep >= 4 ? '#fff' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 4px; font-weight: 700;">
+            ${currentStep > 4 ? '✓' : '4'}
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: ${currentStep === 4 ? '#0284c7' : (currentStep > 4 ? '#15803d' : '#94a3b8')};">4. Return Pickup</span>
+        </div>
+
+        <div style="height: 2px; flex: 0.5; background: ${currentStep > 4 ? '#22c55e' : '#cbd5e1'}; min-width: 15px;"></div>
+
+        <div class="timeline-step ${currentStep >= 5 ? 'completed' : ''} ${currentStep === 5 ? 'active' : ''}" style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 85px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: ${currentStep >= 5 ? '#22c55e' : '#e2e8f0'}; color: ${currentStep >= 5 ? '#fff' : '#64748b'}; display: flex; align-items: center; justify-content: center; font-size: 15px; margin-bottom: 4px; font-weight: 700;">
+            ${currentStep >= 5 ? '✓' : '5'}
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: ${currentStep === 5 ? '#15803d' : '#94a3b8'};">5. Return Owner</span>
+        </div>
+      </div>
+
+      <!-- Prominent Scheduled Return Date Box (Shown for Step 3, 4, 5 in Sequence) -->
+      ${(currentStep >= 3) ? `
+        <div style="background: linear-gradient(135deg, #eff6ff, #f0fdf4); border: 1.5px solid #3b82f6; border-radius: 10px; padding: 12px 16px; margin: 14px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="background: #2563eb; color: #fff; width: 42px; height: 42px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+              <ion-icon name="calendar-outline"></ion-icon>
+            </div>
+            <div>
+              <div style="font-size: 11.5px; font-weight: 800; color: #1d4ed8; text-transform: uppercase; letter-spacing: 0.5px;">
+                📅 Scheduled Return Pickup Date / वापसी पिकअप की तारीख
+              </div>
+              <div style="font-size: 17px; font-weight: 800; color: #0f172a; margin-top: 2px;">
+                ${returnDateFormatted} <span style="font-size: 13px; color: #64748b; font-weight: 500;">(${b.rentalDays || 1} Days Rental &bull; ${b.startDate} to ${b.endDate})</span>
+              </div>
+            </div>
+          </div>
+          <span style="background: #dbeafe; color: #1e40af; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;">
+            <ion-icon name="time-outline"></ion-icon> Return in Sequence
+          </span>
+        </div>
+      ` : ''}
 
       <!-- Modern Two-Column Logistics Grid -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 15px 0;">
@@ -1106,7 +1336,7 @@ function createTrackingCard(b) {
           </strong>
           <span style="color: #b91c1c; font-size: 12px; font-weight: 700;">⚠️ Customer Notified</span>
         </div>
-      ` : currentIdx >= 4 ? `
+      ` : currentStep >= 4 ? `
         <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
           <div>
             <strong style="color: #1e40af; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
@@ -1156,29 +1386,21 @@ function createTrackingCard(b) {
         `}
       </div>
 
-      <!-- Stage Timeline Progress Bar (7 Standard Stages) -->
-      <div class="stage-timeline">
-        ${stages.map((s, idx) => `
-          <div class="timeline-step ${idx <= currentIdx ? 'completed' : ''}" style="cursor: pointer;" title="Set stage to: ${s.label}">
-            <div class="step-icon"><ion-icon name="${s.icon}"></ion-icon></div>
-            <span class="step-label">${s.label}</span>
-          </div>
-        `).join("")}
-      </div>
-
       <div class="tracking-actions" style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <label style="font-size: 12.5px; font-weight: 700; color: #475569;">Stage Selector:</label>
           <select class="direct-stage-select" data-id="${b.id}" data-title="${encodeURIComponent(b.itemTitle || 'Outfit')}" style="padding: 7px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; background: #fff; cursor: pointer;">
-            ${stages.map((s, idx) => `
-              <option value="${s.key}" ${idx === currentIdx ? 'selected' : ''}>${s.label}</option>
-            `).join("")}
+            <option value="confirmed" ${currentStep === 1 ? 'selected' : ''}>1. Owner Pickup</option>
+            <option value="cleaning_in_progress" ${currentStep === 2 ? 'selected' : ''}>2. Washing Hub</option>
+            <option value="out_for_delivery" ${currentStep === 3 ? 'selected' : ''}>3. Deliver Customer</option>
+            <option value="delivered_to_renter" ${currentStep === 4 ? 'selected' : ''}>4. Return Pickup</option>
+            <option value="returned_to_owner" ${currentStep === 5 ? 'selected' : ''}>5. Return Owner</option>
           </select>
         </div>
 
-        ${nextStage ? `
-          <button class="action-btn approve-btn advance-stage-btn" data-id="${b.id}" data-nextstage="${nextStage.key}" data-title="${encodeURIComponent(b.itemTitle || 'Outfit')}" style="background: #0284c7; color: #fff; padding: 10px 22px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);">
-            <ion-icon name="arrow-forward-circle-outline" style="font-size: 20px;"></ion-icon> Advance Order to: ${nextStage.label}
+        ${nextStageConfig ? `
+          <button class="action-btn approve-btn advance-stage-btn" data-id="${b.id}" data-nextstage="${nextStageConfig.nextKey}" data-nexttab="${nextStageConfig.nextTab}" data-title="${encodeURIComponent(b.itemTitle || 'Outfit')}" style="background: #0284c7; color: #fff; padding: 10px 22px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);">
+            <ion-icon name="arrow-forward-circle-outline" style="font-size: 20px;"></ion-icon> Advance Order to: ${nextStageConfig.label}
           </button>
         ` : `
           <span class="completed-banner" style="font-size: 14px; padding: 10px 20px; border-radius: 8px;">🎉 Rental Order Lifecycle Fully Completed & Settled!</span>
@@ -1316,8 +1538,8 @@ function renderComplaintsTab() {
   });
 }
 
-// Handle Advancing Tracking Stage & Log Entry
-async function handleAdvanceTrackingStage(bookingId, nextStage, itemTitle) {
+// Handle Advancing Tracking Stage & Log Entry with Auto-Tab Switch
+async function handleAdvanceTrackingStage(bookingId, nextStage, itemTitle, nextTab) {
   try {
     const bookingRef = doc(db, "rental_bookings", bookingId);
     await updateDoc(bookingRef, {
@@ -1327,15 +1549,15 @@ async function handleAdvanceTrackingStage(bookingId, nextStage, itemTitle) {
 
     const b = activeBookings.find(x => x.id === bookingId) || {};
 
-    // Friendly milestone mappings and rich metadata (7 Standard Stages)
+    // Friendly milestone mappings and rich metadata (5 Core Dispatch Steps)
     const stageTitles = {
-      "confirmed": { step: 1, title: "Stage 1: Confirmed", summary: "Rental order confirmed and queued for pickup" },
-      "picked_up_from_owner": { step: 2, title: "Stage 2: Picked Up from Owner", summary: "Outfit collected from owner and in transit to laundry hub" },
-      "cleaning_in_progress": { step: 3, title: "Stage 3: Washing Hub (Sanitizing)", summary: "Outfit undergoing professional laundry & sanitization at hub" },
-      "out_for_delivery": { step: 4, title: "Stage 4: Out for Delivery", summary: "Rider on the way to deliver freshly sanitized outfit to customer doorstep" },
-      "delivered_to_renter": { step: 5, title: "Stage 5: Delivered to Renter", summary: "Outfit delivered cleanly to customer doorstep and currently in use" },
-      "picked_up_from_renter": { step: 6, title: "Stage 6: Return Picked from Renter", summary: "Outfit collected back from customer after rental period" },
-      "returned_to_owner": { step: 7, title: "Stage 7: Returned to Owner", summary: "Order complete. Outfit inspected and returned to owner" }
+      "confirmed": { step: 1, title: "Step 1: Confirmed", summary: "Rental order confirmed and queued for pickup from owner" },
+      "picked_up_from_owner": { step: 1, title: "Step 1: Picked Up from Owner", summary: "Outfit collected from owner and in transit to washing hub" },
+      "cleaning_in_progress": { step: 2, title: "Step 2: Washing Hub (Sanitizing)", summary: "Outfit undergoing professional laundry & sanitization at hub" },
+      "out_for_delivery": { step: 3, title: "Step 3: Out for Delivery", summary: "Rider on the way to deliver freshly sanitized outfit to customer doorstep" },
+      "delivered_to_renter": { step: 4, title: "Step 4: Delivered & In Use", summary: "Outfit delivered cleanly to customer doorstep. Return scheduled in sequence." },
+      "picked_up_from_renter": { step: 5, title: "Step 5: Return Picked from Renter", summary: "Outfit collected back from customer and returning to owner" },
+      "returned_to_owner": { step: 5, title: "Step 5: Returned to Owner", summary: "Order complete. Outfit inspected and returned to owner" }
     };
     const meta = stageTitles[nextStage] || { step: 1, title: nextStage, summary: "Status update" };
     const logDocId = generateLogDocId(bookingId, nextStage, meta.step);
@@ -1358,14 +1580,14 @@ async function handleAdvanceTrackingStage(bookingId, nextStage, itemTitle) {
       timestamp: serverTimestamp()
     });
 
-    // Friendly milestone message mappings for 7 stages
+    // Friendly milestone message mappings
     const stageMessages = {
-      "confirmed": "Your rental order has been confirmed! We are scheduling pickup.",
+      "confirmed": "Your rental order has been confirmed! We are scheduling pickup from owner.",
       "picked_up_from_owner": "Our delivery executive has picked up your outfit from the owner and is heading to our cleaning hub.",
       "cleaning_in_progress": "Your outfit has arrived at our laundry center and is currently undergoing professional dry-cleaning & sanitization.",
       "out_for_delivery": "Your sanitized outfit is out for delivery! Our rider is on the way to your doorstep.",
       "delivered_to_renter": "Your outfit has been delivered to your doorstep! Enjoy your rental period.",
-      "picked_up_from_renter": "Our delivery executive has picked up your returned outfit and is returning it for inspection.",
+      "picked_up_from_renter": "Our delivery executive has picked up your returned outfit and is returning it to the owner.",
       "returned_to_owner": "Your rental order lifecycle is complete! Thank you for using Laundry & Rentals."
     };
 
@@ -1384,6 +1606,13 @@ async function handleAdvanceTrackingStage(bookingId, nextStage, itemTitle) {
       });
     }
 
+    // Automatically switch dispatch filter tab to the new step so the item never vanishes
+    if (nextTab) {
+      activeDispatchFilter = nextTab;
+    }
+
+    renderTrackingTab();
+    updateCounts();
     console.log(`Booking ${bookingId} advanced to stage ${nextStage}`);
   } catch (err) {
     console.error("Error advancing tracking stage:", err);
