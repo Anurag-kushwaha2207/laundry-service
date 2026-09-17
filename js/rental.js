@@ -583,63 +583,170 @@ function renderOwnerItems() {
           </div>
         ` : ''}
 
-        ${itemBookings.length > 0 ? `
-          <div class="booking-tracking-box">
-            <h4 style="margin: 0 0 10px; font-size: 14px; color: #166534; display: flex; align-items: center; gap: 6px;">
-              <ion-icon name="car-sport-outline"></ion-icon> Active / Past Rental Bookings (${itemBookings.length})
-            </h4>
-            ${itemBookings.map(b => {
-              // Stage name translation
-              const stageMap = {
-                "pickup_from_owner": "🚴 Rider Picking Up from You",
-                "hub_cleaning": "🫧 At Washing Hub (Sanitizing & Dry Cleaning)",
-                "out_for_delivery": "🚚 Out for Delivery to Customer",
-                "delivered_to_customer": "✨ Outfit In Use by Customer",
-                "return_to_hub": "🔄 Returned to Hub for Quality Inspection",
-                "completed": "🎉 Returned to You & Completed"
-              };
-              const stageText = stageMap[b.deliveryStage] || "Processing Order";
-
-              // Payout status badge
-              const isPayoutDone = b.ownerPayoutStatus === "paid";
-              const payoutBadge = isPayoutDone
-                ? `<span style="color: #15803d; font-weight: 700;">✅ Rent Paid to Your Account</span>`
-                : `<span style="color: #ea580c; font-weight: 700;">⏳ Payout Pending (Disbursed upon safe return)</span>`;
-
-              // Deposit status badge
-              let depositBadge = `<span style="color: #0369a1; font-weight: 600;">Held in Safe Custody</span>`;
-              if (b.securityDepositStatus === "refunded") {
-                depositBadge = `<span style="color: #15803d; font-weight: 700;">Refunded to Customer (No damage found)</span>`;
-              } else if (b.securityDepositStatus === "forfeited") {
-                depositBadge = `<span style="color: #b91c1c; font-weight: 700;">Deducted for Damage: ${b.deductionReason || 'Reported'}</span>`;
-              }
-
-              return `
-                <div style="background: #ffffff; border: 1px solid #dcfce7; border-radius: 8px; padding: 12px; margin-bottom: 8px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px;">
-                    <span style="font-size: 13px; font-weight: 700; color: #1e293b;">
-                      Customer: ${b.renterName || 'Renter'} (<a href="tel:${b.renterPhone || ''}" style="color: #0284c7; text-decoration: none;">📞 ${b.renterPhone || 'N/A'}</a>)
-                    </span>
-                    <span style="font-size: 12px; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-weight: 700;">
-                      ${stageText}
-                    </span>
+        ${(() => {
+          // 1. Initial Pickup Tracking for approved outfits
+          let initialPickupBox = '';
+          if (item.status === 'approved') {
+            const pStatus = item.pickupStatus || 'pending_pickup';
+            if (pStatus === 'pending_pickup') {
+              initialPickupBox = `
+                <div class="booking-tracking-box" style="background: #fffbeb; border-color: #fde68a;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <h4 style="margin: 0; font-size: 13.5px; color: #92400e; display: flex; align-items: center; gap: 6px;">
+                      <ion-icon name="bicycle-outline"></ion-icon> 🚴 Delivery Executive Pickup Scheduled
+                    </h4>
+                    <span style="background: #fef3c7; color: #b45309; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px;">Pending Pickup</span>
                   </div>
-                  <div style="font-size: 12.5px; color: #475569; margin-bottom: 8px;">
-                    <span>Rental Duration: <strong>${b.startDate || ''} to ${b.endDate || ''} (${b.rentalDays || 1} days)</strong></span>
-                  </div>
-                  <div class="finance-badge-row">
-                    <div class="finance-badge">
-                      <span>💰 Rent Earned: <strong>₹${b.rentalAmount || 0}</strong> &mdash; ${payoutBadge}</span>
-                    </div>
-                    <div class="finance-badge">
-                      <span>🛡️ Security Deposit (₹${b.securityDeposit || 0}): ${depositBadge}</span>
-                    </div>
-                  </div>
+                  <p style="margin: 0 0 6px; font-size: 12.5px; color: #78350f;">
+                    Our delivery executive is assigned to pick up this approved outfit from your address: <strong>${item.ownerStreetAddress || 'Address on file'}, ${item.city || ''}</strong>.
+                  </p>
                 </div>
               `;
-            }).join('')}
-          </div>
-        ` : ''}
+            } else if (pStatus === 'picked_up') {
+              initialPickupBox = `
+                <div class="booking-tracking-box" style="background: #f0f9ff; border-color: #bae6fd;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <h4 style="margin: 0; font-size: 13.5px; color: #0369a1; display: flex; align-items: center; gap: 6px;">
+                      <ion-icon name="car-sport-outline"></ion-icon> 🚚 Outfit Picked Up - Heading to Hub
+                    </h4>
+                    <span style="background: #e0f2fe; color: #0284c7; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px;">In Transit</span>
+                  </div>
+                  <p style="margin: 0; font-size: 12.5px; color: #075985;">
+                    Rider has collected your outfit and is delivering it to our laundry hub for professional sanitization and steam-pressing.
+                  </p>
+                </div>
+              `;
+            }
+          }
+
+          // 2. Active Customer Bookings Tracking
+          let bookingsBox = '';
+          if (itemBookings.length > 0) {
+            bookingsBox = `
+              <div class="booking-tracking-box">
+                <h4 style="margin: 0 0 12px; font-size: 14px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                  <ion-icon name="car-sport-outline" style="color: #0284c7;"></ion-icon> Customer Rental Bookings & Tracking (${itemBookings.length})
+                </h4>
+                ${itemBookings.map(b => {
+                  const rawStatus = (b.status || b.deliveryStage || "confirmed").toLowerCase();
+                  
+                  let step = 1;
+                  let stageText = "🚴 Rider Picking Up from You";
+                  let badgeBg = "#fef3c7";
+                  let badgeColor = "#b45309";
+                  let stageDesc = "Our delivery boy will visit you to collect the outfit for delivery.";
+
+                  if (rawStatus === "picked_up_from_owner") {
+                    step = 2;
+                    stageText = "🚚 In Transit to Laundry Hub";
+                    badgeBg = "#e0f2fe";
+                    badgeColor = "#0284c7";
+                    stageDesc = "Outfit collected from you and heading to washing hub.";
+                  } else if (rawStatus === "cleaning_in_progress" || rawStatus === "hub_cleaning") {
+                    step = 3;
+                    stageText = "🫧 At Washing Hub (Sanitizing)";
+                    badgeBg = "#dbeafe";
+                    badgeColor = "#1d4ed8";
+                    stageDesc = "Outfit undergoing professional sanitization & fabric inspection.";
+                  } else if (rawStatus === "out_for_delivery") {
+                    step = 4;
+                    stageText = "🚚 Out for Delivery to Customer";
+                    badgeBg = "#fef3c7";
+                    badgeColor = "#d97706";
+                    stageDesc = "Rider is delivering the sanitized outfit to the customer.";
+                  } else if (rawStatus === "delivered_to_renter" || rawStatus === "delivered_to_customer") {
+                    step = 4;
+                    stageText = "✨ In Use by Customer";
+                    badgeBg = "#dcfce7";
+                    badgeColor = "#15803d";
+                    stageDesc = "Delivered to customer. Active rental duration in progress.";
+                  } else if (rawStatus === "picked_up_from_renter" || rawStatus === "return_to_hub") {
+                    step = 5;
+                    stageText = "🔄 Return Collected (Hub Inspection)";
+                    badgeBg = "#fae8ff";
+                    badgeColor = "#86198f";
+                    stageDesc = "Outfit collected back from customer; undergoing return inspection.";
+                  } else if (rawStatus === "returned_to_owner" || rawStatus === "completed") {
+                    step = 6;
+                    stageText = "🎉 Returned to You Safely & Settled";
+                    badgeBg = "#ecfdf5";
+                    badgeColor = "#047857";
+                    stageDesc = "Order completed! Outfit safely back with you.";
+                  }
+
+                  // Payout status badge
+                  const isPayoutDone = b.ownerPayoutStatus === "paid";
+                  const payoutBadge = isPayoutDone
+                    ? `<span style="color: #15803d; font-weight: 700;">✅ Rent Paid to Your Account</span>`
+                    : `<span style="color: #ea580c; font-weight: 700;">⏳ Payout Pending</span>`;
+
+                  // Deposit status badge
+                  let depositBadge = `<span style="color: #0369a1; font-weight: 600;">Held in Safe Custody</span>`;
+                  if (b.securityDepositStatus === "refunded") {
+                    depositBadge = `<span style="color: #15803d; font-weight: 700;">Refunded to Customer (No damage found)</span>`;
+                  } else if (b.securityDepositStatus === "forfeited") {
+                    depositBadge = `<span style="color: #b91c1c; font-weight: 700;">Deducted for Damage: ${b.deductionReason || 'Reported'}</span>`;
+                  }
+
+                  return `
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);">
+                      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 13.5px; font-weight: 700; color: #1e293b;">
+                          Customer: ${b.renterName || 'Customer'} (<a href="tel:${b.renterPhone || ''}" style="color: #0284c7; text-decoration: none; font-weight: 600;">📞 ${b.renterPhone || 'N/A'}</a>)
+                        </span>
+                        <span style="font-size: 12px; background: ${badgeBg}; color: ${badgeColor}; padding: 3px 10px; border-radius: 999px; font-weight: 700;">
+                          ${stageText}
+                        </span>
+                      </div>
+
+                      <!-- 5-Step Visual Progress Bar -->
+                      <div class="owner-timeline">
+                        <div class="owner-step ${step >= 1 ? (step === 1 ? 'active' : 'completed') : ''}">
+                          <div class="owner-step-dot">${step > 1 ? '✓' : '1'}</div>
+                          <div class="owner-step-label">Pickup</div>
+                        </div>
+                        <div class="owner-step ${step >= 2 ? (step === 2 ? 'active' : 'completed') : ''}">
+                          <div class="owner-step-dot">${step > 2 ? '✓' : '2'}</div>
+                          <div class="owner-step-label">In Transit</div>
+                        </div>
+                        <div class="owner-step ${step >= 3 ? (step === 3 ? 'active' : 'completed') : ''}">
+                          <div class="owner-step-dot">${step > 3 ? '✓' : '3'}</div>
+                          <div class="owner-step-label">Washing Hub</div>
+                        </div>
+                        <div class="owner-step ${step >= 4 ? (step === 4 ? 'active' : 'completed') : ''}">
+                          <div class="owner-step-dot">${step > 4 ? '✓' : '4'}</div>
+                          <div class="owner-step-label">With Renter</div>
+                        </div>
+                        <div class="owner-step ${step >= 5 ? (step >= 5 ? 'active' : 'completed') : ''}">
+                          <div class="owner-step-dot">${step >= 6 ? '✓' : '5'}</div>
+                          <div class="owner-step-label">Returned</div>
+                        </div>
+                      </div>
+
+                      <div style="font-size: 12px; color: #64748b; margin-bottom: 8px; background: #f8fafc; padding: 6px 10px; border-radius: 6px;">
+                        📌 <strong>Status:</strong> ${stageDesc}
+                      </div>
+
+                      <div style="font-size: 12.5px; color: #475569; margin-bottom: 8px;">
+                        <span>Rental Duration: <strong>${b.startDate || ''} to ${b.endDate || ''} (${b.rentalDays || 1} days)</strong></span>
+                      </div>
+                      <div class="finance-badge-row">
+                        <div class="finance-badge">
+                          <span>💰 Rent Earned: <strong>₹${b.rentalAmount || 0}</strong> &mdash; ${payoutBadge}</span>
+                        </div>
+                        <div class="finance-badge">
+                          <span>🛡️ Security Deposit (₹${b.securityDeposit || 0}): ${depositBadge}</span>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `;
+          }
+
+          return initialPickupBox + bookingsBox;
+        })()}
 
         <!-- Action / Complaint Button -->
         <div style="display: flex; justify-content: flex-end;">

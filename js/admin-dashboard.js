@@ -182,7 +182,18 @@ function loadDashboardData() {
     updateCounts();
     if (currentTab === "tracking") renderTrackingTab();
   }, (error) => {
-    console.warn("Firestore Warning (rental_bookings):", error);
+    console.warn("Firestore Warning (rental_bookings with orderBy):", error);
+    // Safe fallback without orderBy so index/field issues never break tracking
+    onSnapshot(collection(db, "rental_bookings"), (snapshot) => {
+      activeBookings = [];
+      snapshot.forEach((docSnap) => {
+        activeBookings.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      updateCounts();
+      if (currentTab === "tracking") renderTrackingTab();
+    }, (err2) => {
+      console.error("Firestore Error fallback (rental_bookings):", err2);
+    });
   });
 
   // Listen to rental complaints & dispute tickets
